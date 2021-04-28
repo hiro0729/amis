@@ -46,7 +46,10 @@ export interface FormulaControlSchema extends FormBaseControl {
 
 export interface FormulaProps
   extends FormControlProps,
-    Omit<FormulaControlSchema, 'type'> {}
+    Omit<
+      FormulaControlSchema,
+      'type' | 'className' | 'descriptionClassName' | 'inputClassName'
+    > {}
 
 export default class FormulaControl extends React.Component<
   FormControlProps,
@@ -101,7 +104,7 @@ export default class FormulaControl extends React.Component<
       } else {
         const prevResult: any = evalJS(formula, data as object);
         if (JSON.stringify(prevResult) !== JSON.stringify(nextResult)) {
-          onChange(nextResult || '');
+          onChange(nextResult ?? '');
         }
       }
     }

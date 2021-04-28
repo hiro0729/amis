@@ -97,12 +97,14 @@ export interface ServiceSchema extends BaseSchema {
   name?: SchemaName;
 }
 
-export interface ServiceProps extends RendererProps, ServiceSchema {
+export interface ServiceProps
+  extends RendererProps,
+    Omit<ServiceSchema, 'type' | 'className'> {
   store: IServiceStore;
   messages: SchemaMessage;
 }
 export default class Service extends React.Component<ServiceProps> {
-  timer: NodeJS.Timeout;
+  timer: ReturnType<typeof setTimeout>;
   mounted: boolean;
 
   // 主要是用于关闭 socket

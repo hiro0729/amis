@@ -124,6 +124,15 @@ export default [
           )
       },
       {
+        label: 'ClassName',
+        path: '/zh-CN/docs/types/classname',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/types/classname.md').then(
+            makeMarkdownRenderer
+          )
+      },
+      {
         label: 'API',
         path: '/zh-CN/docs/types/api',
         getComponent: () =>
@@ -169,6 +178,15 @@ export default [
         getComponent: () =>
           // @ts-ignore
           import('../../docs/zh-CN/extend/custom-react.md').then(
+            makeMarkdownRenderer
+          )
+      },
+      {
+        label: '将 amis 当成 UI 库用',
+        path: '/zh-CN/docs/extend/ui-library',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/extend/ui-library.md').then(
             makeMarkdownRenderer
           )
       },

@@ -39,6 +39,8 @@ fis.set('project.files', [
   '/examples/*.tpl',
   '/examples/static/*.png',
   '/examples/static/*.svg',
+  '/examples/static/*.jpg',
+  '/examples/static/*.jpeg',
   '/src/**.html',
   'mock/**'
 ]);
@@ -154,7 +156,7 @@ fis.match('{*.ts,*.jsx,*.tsx,/src/**.js,/src/**.ts}', {
       importHelpers: true,
       esModuleInterop: true,
       experimentalDecorators: true,
-      sourceMap: true,
+      inlineSourceMap: true,
       target: 4
     }),
 
@@ -174,11 +176,29 @@ fis.match('{*.ts,*.jsx,*.tsx,/src/**.js,/src/**.ts}', {
   rExt: '.js'
 });
 
+fis.match('markdown-it/**', {
+  preprocessor: fis.plugin('js-require-file')
+});
+
 fis.match('*.html:jsx', {
   parser: fis.plugin('typescript'),
   rExt: '.js',
   isMod: false
 });
+
+// 这些用了 esm
+fis.match(
+  '{echarts/extension/**.js,zrender/**.js,ansi-to-react/lib/index.js}',
+  {
+    parser: fis.plugin('typescript', {
+      sourceMap: false,
+      importHelpers: true,
+      esModuleInterop: true,
+      emitDecoratorMetadata: false,
+      experimentalDecorators: false
+    })
+  }
+);
 
 fis.hook('node_modules', {
   shimProcess: false,
@@ -418,11 +438,11 @@ if (fis.project.currentMedia() === 'publish') {
 
   env.match('/examples/mod.js', {
     isMod: false,
-    optimizer: fis.plugin('uglify-js')
+    optimizer: fis.plugin('terser')
   });
 
   env.match('*.{js,jsx,ts,tsx}', {
-    optimizer: fis.plugin('uglify-js'),
+    optimizer: fis.plugin('terser'),
     moduleId: function (m, path) {
       return fis.util.md5('amis-sdk' + path);
     }
@@ -449,13 +469,30 @@ if (fis.project.currentMedia() === 'publish') {
         '!jquery/**',
         '!zrender/**',
         '!echarts/**',
+        '!echarts-stat/**',
         '!papaparse/**',
         '!exceljs/**',
         '!docsearch.js/**',
         '!monaco-editor/**.css',
         '!src/components/RichText.tsx',
         '!src/components/Tinymce.tsx',
-        '!src/lib/renderers/Form/CityDB.js'
+        '!src/components/ColorPicker.tsx',
+        '!react-color/**',
+        '!material-colors/**',
+        '!reactcss/**',
+        '!tinycolor2/**',
+        '!cropperjs/**',
+        '!react-cropper/**',
+        '!src/lib/renderers/Form/CityDB.js',
+        '!src/components/Markdown.tsx',
+        '!src/utils/markdown.ts',
+        '!highlight.js/**',
+        '!entities/**',
+        '!linkify-it/**',
+        '!mdurl/**',
+        '!uc.micro/**',
+        '!markdown-it/**',
+        '!punycode/**'
       ],
 
       'rich-text.js': [
@@ -470,7 +507,29 @@ if (fis.project.currentMedia() === 'publish') {
 
       'exceljs.js': ['exceljs/**'],
 
-      'charts.js': ['zrender/**', 'echarts/**'],
+      'markdown.js': [
+        'src/components/Markdown.tsx',
+        'src/utils/markdown.ts',
+        'highlight.js/**',
+        'entities/**',
+        'linkify-it/**',
+        'mdurl/**',
+        'uc.micro/**',
+        'markdown-it/**',
+        'punycode/**'
+      ],
+
+      'color-picker.js': [
+        'src/components/ColorPicker.tsx',
+        'react-color/**',
+        'material-colors/**',
+        'reactcss/**',
+        'tinycolor2/**'
+      ],
+
+      'cropperjs.js': ['cropperjs/**', 'react-cropper/**'],
+
+      'charts.js': ['zrender/**', 'echarts/**', 'echarts-stat/**'],
 
       'rest.js': [
         '*.js',
@@ -483,7 +542,15 @@ if (fis.project.currentMedia() === 'publish') {
         '!zrender/**',
         '!echarts/**',
         '!papaparse/**',
-        '!exceljs/**'
+        '!exceljs/**',
+        '!src/utils/markdown.ts',
+        '!highlight.js/**',
+        '!argparse/**',
+        '!entities/**',
+        '!linkify-it/**',
+        '!mdurl/**',
+        '!uc.micro/**',
+        '!markdown-it/**'
       ]
     }),
     postpackager: [
@@ -810,7 +877,7 @@ if (fis.project.currentMedia() === 'publish') {
   });
 
   ghPages.match('*.{js,ts,tsx,jsx}', {
-    optimizer: fis.plugin('uglify-js'),
+    optimizer: fis.plugin('terser'),
     useHash: true
   });
 

@@ -7,6 +7,7 @@ import {
   OptionsControlProps
 } from './Options';
 import {Spinner} from '../../components';
+import {SchemaApi} from '../../Schema';
 
 /**
  * Tree 下拉选择框。
@@ -54,11 +55,20 @@ export interface TreeControlSchema extends FormOptionsControl {
    * 顶级节点是否可以创建子节点
    */
   rootCreatable?: boolean;
+
+  deferApi?: SchemaApi;
 }
 
 export interface TreeProps
   extends OptionsControlProps,
-    Omit<TreeControlSchema, 'type' | 'options'> {}
+    Omit<
+      TreeControlSchema,
+      | 'type'
+      | 'options'
+      | 'className'
+      | 'inputClassName'
+      | 'descriptionClassName'
+    > {}
 
 export default class TreeControl extends React.Component<TreeProps> {
   static defaultProps: Partial<TreeProps> = {
@@ -99,6 +109,7 @@ export default class TreeControl extends React.Component<TreeProps> {
       rootValue,
       showIcon,
       showRadio,
+      showOutline,
       onAdd,
       creatable,
       createTip,
@@ -113,6 +124,7 @@ export default class TreeControl extends React.Component<TreeProps> {
       rootCreatable,
       rootCreateTip,
       labelField,
+      deferLoad,
       translate: __
     } = this.props;
 
@@ -141,6 +153,7 @@ export default class TreeControl extends React.Component<TreeProps> {
             rootValue={rootValue}
             showIcon={showIcon}
             showRadio={showRadio}
+            showOutline={showOutline}
             cascade={cascade}
             foldedField="collapsed"
             value={value || ''}
@@ -157,6 +170,7 @@ export default class TreeControl extends React.Component<TreeProps> {
             removeTip={removeTip}
             onDelete={onDelete}
             bultinCUD={!addControls && !editControls}
+            onDeferLoad={deferLoad}
           />
         )}
       </div>

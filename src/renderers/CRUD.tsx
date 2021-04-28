@@ -31,7 +31,12 @@ import pick from 'lodash/pick';
 import qs from 'qs';
 import {findDOMNode} from 'react-dom';
 import {evalExpression, filter} from '../utils/tpl';
-import {isValidApi, buildApi, isEffectiveApi} from '../utils/api';
+import {
+  isValidApi,
+  buildApi,
+  isEffectiveApi,
+  isApiOutdated
+} from '../utils/api';
 import omit from 'lodash/omit';
 import find from 'lodash/find';
 import findIndex from 'lodash/findIndex';
@@ -106,6 +111,13 @@ export interface CRUDCommonSchema extends BaseSchema {
    * 单条操作
    */
   itemActions?: Array<ActionSchema>;
+
+  /**
+   * 每页个数，默认为 10，如果不是请设置。
+   *
+   * @default 10
+   */
+  perPage?: number;
 
   /**
    * 可以默认给定初始参数如： {\"perPage\": 24}
@@ -304,7 +316,9 @@ export type CRUDTableSchem = CRUDCommonSchema & {
  */
 export type CRUDSchema = CRUDCardsSchema | CRUDListSchema | CRUDTableSchem;
 
-export interface CRUDProps extends RendererProps, CRUDCommonSchema {
+export interface CRUDProps
+  extends RendererProps,
+    Omit<CRUDCommonSchema, 'type' | 'className'> {
   store: ICRUDStore;
   pickerMode?: boolean; // 选择模式，用做表单中的选择操作
 }
@@ -381,7 +395,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
   control: any;
   lastQuery: any;
   dataInvalid: boolean = false;
-  timer: NodeJS.Timeout;
+  timer: ReturnType<typeof setTimeout>;
   mounted: boolean;
   constructor(props: CRUDProps) {
     super(props);
@@ -446,6 +460,10 @@ export default class CRUD extends React.Component<CRUDProps, any> {
   componentDidMount() {
     const store = this.props.store;
 
+    if (this.props.perPage) {
+      store.changePage(store.page, this.props.perPage);
+    }
+
     if (!this.props.filter || (store.filterTogggable && !store.filterVisible)) {
       this.handleFilterInit({});
     }
@@ -499,22 +517,23 @@ export default class CRUD extends React.Component<CRUDProps, any> {
         this.lastQuery,
         false
       );
-    } else if (!props.syncLocation && props.api && nextProps.api) {
-      // 如果不同步地址栏，则直接看api上是否绑定参数，结果变了就重新刷新。
-      let prevApi = buildApi(props.api, props.data as object, {
-        ignoreData: true
-      });
-      let nextApi = buildApi(nextProps.api, nextProps.data as object, {
-        ignoreData: true
-      });
-
-      if (
-        prevApi.url !== nextApi.url &&
-        isValidApi(nextApi.url) &&
-        (!nextApi.sendOn || evalExpression(nextApi.sendOn, nextProps.data))
-      ) {
-        this.dataInvalid = true;
-      }
+    } else if (
+      props.api &&
+      nextProps.api &&
+      isApiOutdated(
+        props.api,
+        nextProps.api,
+        store.fetchCtxOf(props.data, {
+          pageField: props.pageField,
+          perPageField: props.perPageField
+        }),
+        store.fetchCtxOf(nextProps.data, {
+          pageField: nextProps.pageField,
+          perPageField: nextProps.perPageField
+        })
+      )
+    ) {
+      this.dataInvalid = true;
     }
   }
 
@@ -1074,7 +1093,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
   handleSave(
     rows: Array<object> | object,
     diff: Array<object> | object,
-    indexes: Array<number>,
+    indexes: Array<string>,
     unModifiedItems?: Array<any>,
     rowsOrigin?: Array<object> | object,
     resetOnFailed?: boolean
@@ -1091,7 +1110,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
 
     if (Array.isArray(rows)) {
       if (!isEffectiveApi(quickSaveApi)) {
-        env && env.alert('CRUD quickSaveApi is required!');
+        env && env.alert('CRUD quickSaveApi is required');
         return;
       }
 
@@ -1344,7 +1363,10 @@ export default class CRUD extends React.Component<CRUDProps, any> {
     }
 
     if (pickerMode && multiple === false && newItems.length > 1) {
-      newUnSelectedItems.push(...newItems.splice(0, newItems.length - 1));
+      newUnSelectedItems.push.apply(
+        newUnSelectedItems,
+        newItems.splice(0, newItems.length - 1)
+      );
     }
 
     store.setSelectedItems(newItems);
@@ -1429,7 +1451,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
     const unSelected = store.unSelectedItems.concat();
 
     const idx = selected.indexOf(item);
-    ~idx && unSelected.push(...selected.splice(idx, 1));
+    ~idx && unSelected.push.apply(unSelected, selected.splice(idx, 1));
 
     store.setSelectedItems(selected);
     store.setUnSelectedItems(unSelected);
@@ -1596,7 +1618,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
     ) : null;
   }
 
-  renderPagination() {
+  renderPagination(toolbar: SchemaNode) {
     const {store, render, classnames: cx, alwaysShowPagination} = this.props;
 
     const {page, lastPage} = store;
@@ -1609,6 +1631,12 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       return null;
     }
 
+    const extraProps: any = {};
+    if (typeof toolbar !== 'string') {
+      extraProps.showPageInput = (toolbar as Schema).showPageInput;
+      extraProps.maxButtons = (toolbar as Schema).maxButtons;
+    }
+
     return (
       <div className={cx('Crud-pager')}>
         {render(
@@ -1617,6 +1645,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
             type: 'pagination'
           },
           {
+            ...extraProps,
             activePage: page,
             lastPage: lastPage,
             hasNext: store.hasNext,
@@ -1771,7 +1800,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
     if (type === 'bulkActions' || type === 'bulk-actions') {
       return this.renderBulkActions(childProps);
     } else if (type === 'pagination') {
-      return this.renderPagination();
+      return this.renderPagination(toolbar);
     } else if (type === 'statistics') {
       return this.renderStatistics();
     } else if (type === 'switch-per-page') {
@@ -1921,7 +1950,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
 
     return (
       <div className={cx('Crud-selection')}>
-        <div className={cx('Crud-selectionLabel')}>已选条目：</div>
+        <div className={cx('Crud-selectionLabel')}>{__('CRUD.selected')}</div>
         {store.selectedItems.map((item, index) => (
           <div key={index} className={cx(`Crud-value`)}>
             <span
@@ -1969,6 +1998,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
       itemActions,
       classnames: cx,
       keepItemSelectionOnPageChange,
+      maxKeepItemSelectionLength,
       onAction,
       popOverContainer,
       translate: __,
@@ -2011,6 +2041,7 @@ export default class CRUD extends React.Component<CRUDProps, any> {
           'body',
           {
             ...rest,
+            columns: store.columns ?? rest.columns,
             type: mode || 'table'
           },
           {
@@ -2032,6 +2063,8 @@ export default class CRUD extends React.Component<CRUDProps, any> {
               pickerMode || keepItemSelectionOnPageChange
                 ? store.selectedItemsAsArray
                 : undefined,
+            keepItemSelectionOnPageChange,
+            maxKeepItemSelectionLength,
             valueField: valueField || primaryField,
             primaryField: primaryField,
             hideQuickSaveBtn,

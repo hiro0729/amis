@@ -41,7 +41,12 @@ export interface HBoxControlSchema
   >;
 }
 
-interface HBoxProps extends FormControlProps, HBoxControlSchema {
+interface HBoxProps
+  extends FormControlProps,
+    Omit<
+      HBoxControlSchema,
+      'type' | 'className' | 'descriptionClassName' | 'inputClassName'
+    > {
   store: IIRendererStore;
 }
 
@@ -87,7 +92,7 @@ export class HBoxRenderer extends React.Component<HBoxProps, any> {
   renderChild(region: string, node: Schema, index: number) {
     const {render, renderFormItems, formMode, store, $path} = this.props;
 
-    if (node && !node.type && (node.controls || node.tabs || node.feildSet)) {
+    if (node && !node.type && (node.controls || node.tabs || node.fieldSet)) {
       return renderFormItems(
         node as any,
         ($path as string).replace(/^.*form\//, ''),

@@ -31,8 +31,18 @@ order: 59
               "value": 2
             },
             {
-              "label": "file B",
-              "value": 3
+              "label": "Folder B",
+              "value": 3,
+              "children": [
+                {
+                  "label": "file b1",
+                  "value": 3.1
+                },
+                {
+                  "label": "file b2",
+                  "value": 3.2
+                }
+              ]
             }
           ]
         },
@@ -75,6 +85,61 @@ order: 59
             {
               "label": "file B",
               "value": 3
+            }
+          ]
+        },
+        {
+          "label": "file C",
+          "value": 4
+        },
+        {
+          "label": "file D",
+          "value": 5
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 是否显示展开线
+
+> 1.1.6 版本
+
+通过 `showOutline` 来控制是否显示展开线。
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "https://3xsw4ap8wah59.cfc-execute.bj.baidubce.com/api/amis-mock/mock2/form/saveForm",
+  "controls": [
+    {
+      "type": "tree",
+      "name": "tree",
+      "label": "Tree",
+      "showOutline": true,
+      "options": [
+        {
+          "label": "Folder A",
+          "value": 1,
+          "children": [
+            {
+              "label": "file A",
+              "value": 2
+            },
+            {
+              "label": "Folder B",
+              "value": 3,
+              "children": [
+                {
+                  "label": "file b1",
+                  "value": 3.1
+                },
+                {
+                  "label": "file b2",
+                  "value": 3.2
+                }
+              ]
             }
           ]
         },
@@ -493,6 +558,54 @@ order: 59
         {
           "label": "file C",
           "value": 4
+        },
+        {
+          "label": "file D",
+          "value": 5
+        }
+      ]
+    }
+  ]
+}
+```
+
+## 懒加载
+
+> since 1.1.6
+
+需要懒加载的选项请配置 `defer` 为 true，然后配置 `deferApi` 即可完成懒加载。如果不配置 `deferApi` 会使用 `source` 接口。
+`deferApi` 中可以用到当前选项中的任何字段，比如以下这个例子是把 label 传给了 defer 接口
+
+```schema: scope="body"
+{
+  "type": "form",
+  "api": "https://3xsw4ap8wah59.cfc-execute.bj.baidubce.com/api/amis-mock/mock2/form/saveForm",
+  "controls": [
+    {
+      "type": "tree",
+      "name": "tree",
+      "label": "Tree",
+      "deferApi": "https://3xsw4ap8wah59.cfc-execute.bj.baidubce.com/api/amis-mock/mock2/form/deferOptions?label=${label}&waitSeconds=2",
+      "options": [
+        {
+          "label": "Folder A",
+          "value": 1,
+          "collapsed": true,
+          "children": [
+            {
+              "label": "file A",
+              "value": 2
+            },
+            {
+              "label": "file B",
+              "value": 3
+            }
+          ]
+        },
+        {
+          "label": "这下面是懒加载的",
+          "value": 4,
+          "defer": true
         },
         {
           "label": "file D",

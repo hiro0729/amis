@@ -319,6 +319,34 @@ icon 也可以是 url 地址，比如
 | feedback | `DialogObject`                                                                           | -      | 如果 ajax 类型的，当 ajax 返回正常后，还能接着弹出一个 dialog 做其他交互。返回的数据可用于这个 dialog 中。格式可参考[Dialog](./Dialog.md) |
 | messages | `object`                                                                                 | -      | `success`：ajax 操作成功后提示，可以不指定，不指定时以 api 返回为准。`failed`：ajax 操作失败提示。                                        |
 
+### 倒计时
+
+主要用于发验证码的场景，通过设置倒计时 `countDown`（单位是秒），让点击按钮后禁用一段时间：
+
+```schema: scope="body"
+{
+  "type": "form",
+  "controls": [
+    {
+      "name": "phone",
+      "type": "text",
+      "required": true,
+      "label": "手机号",
+      "addOn": {
+        "label": "发送验证码",
+        "type": "button",
+        "countDown": 60,
+        "countDownTpl": "${timeLeft} 秒后重发",
+        "actionType": "ajax",
+        "api": "https://3xsw4ap8wah59.cfc-execute.bj.baidubce.com/api/amis-mock/mock2/form/saveForm?phone=${phone}"
+      }
+    }
+  ]
+}
+```
+
+同时还能通过 `countDownTpl` 来控制显示的文本，其中 `${timeLeft}` 变量是剩余时间。
+
 ## 跳转链接
 
 ### 单页跳转
@@ -360,6 +388,49 @@ icon 也可以是 url 地址，比如
 | actionType | `string`  | `url`   | 页面跳转                                         |
 | url        | `string`  | -       | 按钮点击后，会打开指定页面。可用 `${xxx}` 取值。 |
 | blank      | `boolean` | `false` | 如果为 `true` 将在新 tab 页面打开。              |
+
+## 发送邮件
+
+```schema: scope="body"
+{
+  "label": "发送邮件",
+  "type": "button",
+  "actionType": "email",
+  "to": "amis@baidu.com",
+  "cc": "baidu@baidu.com",
+  "subject": "这是邮件主题",
+  "body": "这是邮件正文"
+}
+```
+
+### 异步获取数据
+
+```schema: scope="body"
+{
+  "type": "page",
+  "initApi": "https://3xsw4ap8wah59.cfc-execute.bj.baidubce.com/api/amis-mock/mock2/mail/mailInfo",
+  "body": {
+    "label": "发送邮件",
+    "type": "button",
+    "actionType": "email",
+    "to": "${to}",
+    "cc": "${cc}",
+    "subject": "${subject}",
+    "body": "${body}"
+  }
+}
+```
+
+**属性表**
+
+| 属性名     | 类型     | 默认值  | 说明                             |
+| ---------- | -------- | ------- | -------------------------------- |
+| actionType | `string` | `email` | 点击后显示一个弹出框             |
+| to         | `string` | -       | 收件人邮箱，可用 ${xxx} 取值。   |
+| cc         | `string` | -       | 抄送邮箱，可用 ${xxx} 取值。     |
+| bcc        | `string` | -       | 匿名抄送邮箱，可用 ${xxx} 取值。 |
+| subject    | `string` | -       | 邮件主题，可用 ${xxx} 取值。     |
+| body       | `string` | -       | 邮件正文，可用 ${xxx} 取值。     |
 
 ## 弹框
 

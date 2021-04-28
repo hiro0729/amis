@@ -24,7 +24,16 @@ export interface ButtonGroupControlSchema
 
 export interface ButtonGroupProps
   extends OptionsControlProps,
-    Omit<ButtonGroupControlSchema, 'size' | 'source'> {
+    Omit<
+      ButtonGroupControlSchema,
+      | 'size'
+      | 'source'
+      | 'type'
+      | 'className'
+      | 'descriptionClassName'
+      | 'inputClassName'
+      | 'btnClassName'
+    > {
   options: Array<Option>;
 }
 
@@ -61,13 +70,15 @@ export default class ButtonGroupControl extends React.Component<
       value,
       labelField,
       placeholder,
+      translate: __,
       btnClassName,
       btnActiveClassName,
       selectedOptions,
       buttons,
       size,
       block,
-      vertical
+      vertical,
+      translate: __
     } = props;
 
     let body: Array<React.ReactNode> = [];
@@ -136,7 +147,9 @@ export default class ButtonGroupControl extends React.Component<
         {body.length ? (
           body
         ) : (
-          <span className={`${ns}ButtonGroup-placeholder`}>{placeholder}</span>
+          <span className={`${ns}ButtonGroup-placeholder`}>
+            {__(placeholder)}
+          </span>
         )}
       </div>
     );

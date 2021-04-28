@@ -6,6 +6,7 @@ import {ScopedContext, IScopedContext} from '../Scoped';
 import {buildApi, isApiOutdated} from '../utils/api';
 import {BaseSchema, SchemaUrlPath} from '../Schema';
 import {ActionSchema} from './Action';
+import {isPureVariable, resolveVariableAndFilter} from '../utils/tpl-builtin';
 
 /**
  * IFrame 渲染器
@@ -30,7 +31,9 @@ export interface IFrameSchema extends BaseSchema {
   height?: number | string;
 }
 
-export interface IFrameProps extends RendererProps, IFrameSchema {}
+export interface IFrameProps
+  extends RendererProps,
+    Omit<IFrameSchema, 'type' | 'className'> {}
 
 export default class IFrame extends React.Component<IFrameProps, object> {
   IFrameRef: React.RefObject<HTMLIFrameElement> = React.createRef();
@@ -157,6 +160,10 @@ export default class IFrame extends React.Component<IFrameProps, object> {
       ...tempStyle,
       ...style
     };
+
+    if (isPureVariable(src)) {
+      src = resolveVariableAndFilter(src, data);
+    }
 
     const finalSrc = src ? buildApi(src, data).url : undefined;
 

@@ -46,12 +46,15 @@ import {VideoSchema} from './renderers/Video';
 import {WizardSchema} from './renderers/Wizard';
 import {WrapperSchema} from './renderers/Wrapper';
 import {TableSchema} from './renderers/Table';
-import {DialogSchema} from './renderers/Dialog';
+import {DialogSchema, DialogSchemaBase} from './renderers/Dialog';
 import {DrawerSchema} from './renderers/Drawer';
 import {SearchBoxSchema} from './renderers/SearchBox';
 import {SparkLineSchema} from './renderers/SparkLine';
 import {PaginationWrapperSchema} from './renderers/PaginationWrapper';
 import {PaginationSchema} from './renderers/Pagination';
+import {AnchorNavSchema} from './renderers/AnchorNav';
+import {AvatarSchema} from './renderers/Avatar';
+import {StepsSchema} from './renderers/Steps';
 
 // 每加个类型，这补充一下。
 export type SchemaType =
@@ -62,8 +65,10 @@ export type SchemaType =
   | 'alert'
   | 'app'
   | 'audio'
+  | 'avatar'
   | 'button-group'
   | 'button-toolbar'
+  | 'breadcrumb'
   | 'card'
   | 'cards'
   | 'carousel'
@@ -86,6 +91,8 @@ export type SchemaType =
   | 'dropdown-button'
   | 'drawer'
   | 'each'
+  | 'flex'
+  | 'flex-item'
   | 'grid'
   | 'grid-2d'
   | 'hbox'
@@ -103,10 +110,12 @@ export type SchemaType =
   | 'static-list' // 这个几个跟表单项同名，再form下面用必须带前缀 static-
   | 'map'
   | 'mapping'
+  | 'markdown'
   | 'nav'
   | 'page'
   | 'pagination'
   | 'pagination-wrapper'
+  | 'property'
   | 'operation'
   | 'panel'
   | 'plain'
@@ -129,7 +138,9 @@ export type SchemaType =
   | 'vbox'
   | 'video'
   | 'wizard'
-  | 'wrapper';
+  | 'wrapper'
+  | 'anchor-nav'
+  | 'steps';
 
 export type SchemaObject =
   | PageSchema
@@ -138,6 +149,7 @@ export type SchemaObject =
   | ActionSchema
   | AlertSchema
   | AudioSchema
+  | AvatarSchema
   | ButtonGroupSchema
   | ButtonToolbarSchema
   | CardSchema
@@ -185,7 +197,9 @@ export type SchemaObject =
   | VideoSchema
   | WizardSchema
   | WrapperSchema
-  | FormSchema;
+  | FormSchema
+  | AnchorNavSchema
+  | StepsSchema;
 
 export type SchemaCollection =
   | SchemaObject
@@ -197,10 +211,28 @@ export type SchemaCollection =
  */
 export type SchemaExpression = string;
 
+/**
+ * css类名，配置字符串，或者对象。
+ *
+ *     className: "red"
+ *
+ * 用对象配置时意味着你能跟表达式一起搭配使用，如：
+ *
+ *     className: {
+ *         "red": "data.progress > 80",
+ *         "blue": "data.progress > 60"
+ *     }
+ */
+export type SchemaClassName =
+  | string
+  | {
+      [propName: string]: boolean | undefined | null | SchemaExpression;
+    };
+
 // /**
 //  * css类名，配置字符串，或者对象。
 //  *
-//  *     className: "red"
+//  *   className: "red"
 //  *
 //  * 用对象配置时意味着你能跟表达式一起搭配使用，如：
 //  *
@@ -209,16 +241,7 @@ export type SchemaExpression = string;
 //  *         "blue": "data.progress > 60"
 //  *     }
 //  */
-// export type SchemaClassName =
-//   | string
-//   | {
-//       [propName: string]: true | false | null | SchemaExpression;
-//     };
-
-/**
- * css类名，字符串格式
- */
-export type SchemaClassName = string; // todo 支持上面那种格式。
+// export type SchemaClassName = string;
 
 export interface SchemaApiObject {
   /**
@@ -251,7 +274,7 @@ export interface SchemaApiObject {
    *
    * 如果想通过 body 发送给后端，那么请把这个配置成 false。
    *
-   * 但是，浏览器还不支持啊，设置了只是摆设。
+   * 但是，浏览器还不支持啊，设置了只是摆设。除非服务端支持 method-override
    */
   attachDataToQuery?: boolean;
 
@@ -284,8 +307,16 @@ export interface SchemaApiObject {
 
   /**
    * 是否自动刷新，当 url 中的取值结果变化时，自动刷新数据。
+   *
+   * @default true
    */
   autoRefresh?: boolean;
+
+  /**
+   * 当开启自动刷新的时候，默认是 api 的 url 来自动跟踪变量变化的。
+   * 如果你希望监控 url 外的变量，请配置 traceExpression。
+   */
+  trackExpression?: string;
 
   /**
    * 如果设置了值，同一个接口，相同参数，指定的时间（单位：ms）内请求将直接走缓存。
@@ -445,4 +476,90 @@ export interface BaseSchema {
   visibleOn?: SchemaExpression;
 }
 
-export {PageSchema};
+export interface Option {
+  /**
+   * 用来显示的文字
+   */
+  label?: string;
+
+  /**
+   * 可以用来给 Option 标记个范围，让数据展示更清晰。
+   *
+   * 这个只有在数值展示的时候显示。
+   */
+  scopeLabel?: string;
+
+  /**
+   * 请保证数值唯一，多个选项值一致会认为是同一个选项。
+   */
+  value?: any;
+
+  /**
+   * 是否禁用
+   */
+  disabled?: boolean;
+
+  /**
+   * 支持嵌套
+   */
+  children?: Options;
+
+  /**
+   * 是否可见
+   */
+  visible?: boolean;
+
+  /**
+   * 最好不要用！因为有 visible 就够了。
+   *
+   * @deprecated 用 visible
+   */
+  hidden?: boolean;
+
+  /**
+   * 描述，部分控件支持
+   */
+  description?: string;
+
+  /**
+   * 标记后数据延时加载
+   */
+  defer?: boolean;
+
+  /**
+   * 如果设置了，优先级更高，不设置走 source 接口加载。
+   */
+  deferApi?: SchemaApi;
+
+  /**
+   * 标记正在加载。只有 defer 为 true 时有意义。内部字段不可以外部设置
+   */
+  loading?: boolean;
+
+  /**
+   * 只有设置了 defer 才有意义，内部字段不可以外部设置
+   */
+  loaded?: boolean;
+
+  [propName: string]: any;
+}
+export interface Options extends Array<Option> {}
+
+export interface FeedbackDialog extends DialogSchemaBase {
+  /**
+   * 可以用来配置 feedback 的出现条件
+   */
+  visibleOn?: string;
+
+  /**
+   * feedback 弹框取消是否中断后续操作
+   */
+  skipRestOnCancel?: boolean;
+
+  /**
+   * feedback 弹框确认是否中断后续操作
+   */
+  skipRestOnConfirm?: boolean;
+}
+
+export type RootSchema = PageSchema;

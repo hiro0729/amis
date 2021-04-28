@@ -2,12 +2,10 @@ import React from 'react';
 import {FormItem, FormControlProps, FormBaseControl} from './Item';
 import cx from 'classnames';
 import {filterDate, parseDuration} from '../../utils/tpl-builtin';
-import moment from 'moment';
 import 'moment/locale/zh-cn';
 import DateRangePicker, {
   DateRangePicker as BaseDateRangePicker
 } from '../../components/DateRangePicker';
-import {anyChanged} from '../../utils/helper';
 
 /**
  * DateRange 日期范围控件
@@ -73,7 +71,10 @@ export interface DateRangeControlSchema extends FormBaseControl {
 
 export interface DateRangeProps
   extends FormControlProps,
-    Omit<DateRangeControlSchema, 'type'> {
+    Omit<
+      DateRangeControlSchema,
+      'type' | 'className' | 'descriptionClassName' | 'inputClassName'
+    > {
   delimiter: string;
   format: string;
   joinValues: boolean;

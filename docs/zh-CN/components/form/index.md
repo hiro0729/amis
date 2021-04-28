@@ -412,6 +412,25 @@ Form 默认会在底部渲染一个提交按钮，用于执行表单的提交行
 }
 ```
 
+比如以上这个例子接口返回为
+
+```
+{
+    status: 0,
+    msg: "",
+    data: {
+        name: "Amis Renderer",
+        author: "fex",
+        date: 1615978757,
+        info: ""
+    }
+}
+```
+
+第一个表单项的 name 配置为 `name`，所以这个表单初始化完毕后展示 `Amis Renderer`。
+
+> 表单项的 value 是不支持表达式，所以不要尝试用 `value: "${xxx}"` 来关联数据。
+
 ### 轮询初始化请求
 
 Form 支持轮询初始化接口，步骤如下：
@@ -893,9 +912,35 @@ Form 支持轮询初始化接口，步骤如下：
 
 ## 持久化保存表单项数据
 
-表单默认在重置之后（切换页面、弹框中表单关闭表单），会自动清空掉表单中的所有数据，如果你想持久化保留当前表单项的数据而不清空它，那么配置`persistData:true`
+表单默认在重置之后（切换页面、弹框中表单关闭表单），会自动清空掉表单中的所有数据，如果你想持久化保留当前表单项的数据而不清空它，那么通过 Form 配置 `persistData: "xxx"`，指定一个 `key` ，来实现数据持久化保存
+
+> 注意，如果使用在 CRUD 列表中的编辑框内的 Form 中，可以利用数据映射语法，`persistData: "xxx:${id}"`，来为 form 指定一个唯一的 key
 
 如果想提交成功后，清空该缓存，则配置`"clearPersistDataAfterSubmit": true`
+
+## 禁用回车提交
+
+表单默认情况下回车就会提交，如果想阻止这个行为，可以加上 `preventEnterSubmit` 配置项。
+
+```schema: scope="body"
+{
+    "type": "form",
+    "api": "https://3xsw4ap8wah59.cfc-execute.bj.baidubce.com/api/amis-mock/mock2/form/saveForm",
+    "preventEnterSubmit": true,
+    "controls": [
+      {
+        "type": "text",
+        "name": "name",
+        "label": "姓名："
+      },
+      {
+        "name": "email",
+        "type": "email",
+        "label": "邮箱："
+      }
+    ]
+}
+```
 
 ## 属性表
 
@@ -940,7 +985,8 @@ Form 支持轮询初始化接口，步骤如下：
 | reload                      | `string`                            |                                                                        | 操作完后刷新目标对象。请填写目标组件设置的 name 值，如果填写为 `window` 则让当前页面整体刷新。                                                                                                                                                                                                                                                               |
 | autoFocus                   | `boolean`                           | `false`                                                                | 是否自动聚焦。                                                                                                                                                                                                                                                                                                                                               |
 | canAccessSuperData          | `boolean`                           | `true`                                                                 | 指定是否可以自动获取上层的数据并映射到表单项上                                                                                                                                                                                                                                                                                                               |
-| persistData                 | `boolean`                           | `true`                                                                 | 指定表单是否开启本地缓存                                                                                                                                                                                                                                                                                                                                     |
+| persistData                 | `string`                            | `""`                                                                   | 指定一个唯一的 key，来配置当前表单是否开启本地缓存                                                                                                                                                                                                                                                                                                           |
 | clearPersistDataAfterSubmit | `boolean`                           | `true`                                                                 | 指定表单提交成功后是否清除本地缓存                                                                                                                                                                                                                                                                                                                           |
+| preventEnterSubmit          | `boolean`                           | `false`                                                                | 禁用回车提交表单                                                                                                                                                                                                                                                                                                                                             |
 | trimValues                  | `boolean`                           | `false`                                                                | trim 当前表单项的每一个值                                                                                                                                                                                                                                                                                                                                    |
 | promptPageLeave             | `boolean`                           | `false`                                                                | form 还没保存，即将离开页面前是否弹框确认。                                                                                                                                                                                                                                                                                                                  |

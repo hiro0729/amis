@@ -22,6 +22,7 @@ export interface fetcherResult {
     errors?: {
       [propName: string]: string;
     };
+    type?: string;
   };
   status: number;
   headers: object;
@@ -34,6 +35,7 @@ export interface fetchOptions {
   autoAppend?: boolean;
   beforeSend?: (data: any) => any;
   onSuccess?: (json: Payload) => any;
+  onFailed?: (json: Payload) => any;
   silent?: boolean;
   [propName: string]: any;
 }
@@ -84,6 +86,7 @@ export interface Action extends Button {
     | 'jump'
     | 'link'
     | 'url'
+    | 'email'
     | 'close'
     | 'confirm'
     | 'add'
@@ -105,6 +108,10 @@ export interface Action extends Button {
   target?: string;
   link?: string;
   url?: string;
+  cc?: string;
+  bcc?: string;
+  subject?: string;
+  body?: string;
   mergeData?: boolean;
   reload?: string;
   messages?: {

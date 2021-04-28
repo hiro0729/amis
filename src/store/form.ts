@@ -28,6 +28,7 @@ import {
 import isEqual from 'lodash/isEqual';
 import flatten from 'lodash/flatten';
 import {getStoreById, removeStore} from './manager';
+import {filter} from '../utils/tpl';
 
 export const FormStore = ServiceStore.named('FormStore')
   .props({
@@ -40,7 +41,7 @@ export const FormStore = ServiceStore.named('FormStore')
     // items: types.optional(types.array(types.late(() => FormItemStore)), []),
     itemsRef: types.optional(types.array(types.string), []),
     canAccessSuperData: true,
-    persistData: false,
+    persistData: '',
     restError: types.optional(types.array(types.string), []) // 没有映射到表达项上的 errors
   })
   .views(self => {
@@ -110,6 +111,14 @@ export const FormStore = ServiceStore.named('FormStore')
         }
 
         return !this.isPristine;
+      },
+
+      get persistKey() {
+        return `${location.pathname}/${self.path}/${
+          typeof self.persistData === 'string'
+            ? filter(self.persistData, self.data)
+            : self.persistData
+        }`;
       }
     };
   })
@@ -179,7 +188,7 @@ export const FormStore = ServiceStore.named('FormStore')
       self.data = data;
 
       if (self.persistData) {
-        setPersistData();
+        setLocalPersistData();
       }
 
       // 同步 options
@@ -294,32 +303,7 @@ export const FormStore = ServiceStore.named('FormStore')
         if (!json.ok) {
           // 验证错误
           if (json.status === 422 && json.errors) {
-            const errors = json.errors;
-            Object.keys(errors).forEach((key: string) => {
-              const item = self.getItemById(key);
-              const items = self.getItemsByName(key);
-
-              if (item) {
-                item.setError(errors[key]);
-                delete errors[key];
-              } else if (items.length) {
-                // 通过 name 直接找到的
-                items.forEach(item => item.setError(errors[key]));
-                delete errors[key];
-              } else {
-                // 尝试通过path寻找
-                const items = getItemsByPath(key);
-
-                if (Array.isArray(items) && items.length) {
-                  items.forEach(item => item.setError(`${errors[key]}`));
-                  delete errors[key];
-                }
-              }
-            });
-
-            // 没有映射上的error信息加在msg后显示出来
-            !isEmpty(errors) &&
-              setRestError(Object.keys(errors).map(key => errors[key]));
+            handleRemoteError(json.errors);
 
             self.updateMessage(
               json.msg ??
@@ -387,6 +371,34 @@ export const FormStore = ServiceStore.named('FormStore')
         throw e;
       }
     });
+
+    function handleRemoteError(errors: {[propName: string]: string}) {
+      Object.keys(errors).forEach((key: string) => {
+        const item = self.getItemById(key);
+        const items = self.getItemsByName(key);
+
+        if (item) {
+          item.setError(errors[key]);
+          delete errors[key];
+        } else if (items.length) {
+          // 通过 name 直接找到的
+          items.forEach(item => item.setError(errors[key]));
+          delete errors[key];
+        } else {
+          // 尝试通过path寻找
+          const items = getItemsByPath(key);
+
+          if (Array.isArray(items) && items.length) {
+            items.forEach(item => item.setError(`${errors[key]}`));
+            delete errors[key];
+          }
+        }
+      });
+
+      // 没有映射上的error信息加在msg后显示出来
+      !isEmpty(errors) &&
+        setRestError(Object.keys(errors).map(key => String(errors[key])));
+    }
 
     const getItemsByPath = (key: string) => {
       const paths = keyToPath(key);
@@ -547,12 +559,12 @@ export const FormStore = ServiceStore.named('FormStore')
       self.inited = value;
     }
 
-    const setPersistData = debounce(
-      () =>
-        localStorage.setItem(
-          location.pathname + self.path,
-          JSON.stringify(self.data)
-        ),
+    function setPersistData(value = '') {
+      self.persistData = value;
+    }
+
+    const setLocalPersistData = debounce(
+      () => localStorage.setItem(self.persistKey, JSON.stringify(self.data)),
       250,
       {
         trailing: true,
@@ -560,16 +572,15 @@ export const FormStore = ServiceStore.named('FormStore')
       }
     );
 
-    function getPersistData() {
-      self.persistData = true;
-      let data = localStorage.getItem(location.pathname + self.path);
+    function getLocalPersistData() {
+      let data = localStorage.getItem(self.persistKey);
       if (data) {
         self.updateData(JSON.parse(data));
       }
     }
 
-    function clearPersistData() {
-      localStorage.removeItem(location.pathname + self.path);
+    function clearLocalPersistData() {
+      localStorage.removeItem(self.persistKey);
     }
 
     function onChildStoreDispose(child: IFormItemStore) {
@@ -600,19 +611,21 @@ export const FormStore = ServiceStore.named('FormStore')
       syncOptions,
       setCanAccessSuperData,
       deleteValueByName,
-      getPersistData,
+      getLocalPersistData,
+      setLocalPersistData,
+      clearLocalPersistData,
       setPersistData,
-      clearPersistData,
       clear,
       onChildStoreDispose,
       updateSavedData,
+      handleRemoteError,
       getItemsByPath,
       setRestError,
       addRestError,
       clearRestError,
       beforeDestroy() {
         syncOptions.cancel();
-        setPersistData.cancel();
+        setLocalPersistData.cancel();
       }
     };
   });

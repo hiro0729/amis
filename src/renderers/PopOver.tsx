@@ -12,7 +12,7 @@ import {RootCloseWrapper} from 'react-overlays';
 import PopOver, {Offset} from '../components/PopOver';
 import Overlay from '../components/Overlay';
 import {Icon} from '../components/icons';
-import {SchemaCollection} from '../Schema';
+import {SchemaCollection, SchemaExpression} from '../Schema';
 
 export interface SchemaPopOverObject {
   /**
@@ -24,6 +24,11 @@ export interface SchemaPopOverObject {
    * 弹框外层类名
    */
   popOverClassName?: string;
+
+  /**
+   * 配置当前行是否启动，要用表达式
+   */
+  popOverEnableOn?: SchemaExpression;
 
   /**
    * 弹出模式
@@ -134,7 +139,7 @@ export const HocPopOver = (
   let lastOpenedInstance: PopOverComponent | null = null;
   class PopOverComponent extends React.Component<PopOverProps, PopOverState> {
     target: HTMLElement;
-    timer: NodeJS.Timeout;
+    timer: ReturnType<typeof setTimeout>;
     static ComposedComponent = Component;
     constructor(props: PopOverProps) {
       super(props);
@@ -317,13 +322,19 @@ export const HocPopOver = (
       const {
         popOver,
         popOverEnabled,
+        popOverEnable,
         className,
         noHoc,
         classnames: cx,
         showIcon
       } = this.props;
 
-      if (!popOver || popOverEnabled === false || noHoc) {
+      if (
+        !popOver ||
+        popOverEnabled === false ||
+        noHoc ||
+        popOverEnable === false
+      ) {
         return <Component {...this.props} />;
       }
 

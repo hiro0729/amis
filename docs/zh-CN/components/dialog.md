@@ -285,6 +285,43 @@ Dialog 弹框 主要由 [Action](./action) 触发，主要展示一个对话框�
 }
 ```
 
+## 配置弹窗的按钮
+
+可以通过设置 `actions` 来控制弹窗中的按钮。
+
+```schema: scope="body"
+{
+    "type": "button-toolbar",
+    "buttons": [
+        {
+            "type": "button",
+            "label": "无按钮",
+            "actionType": "dialog",
+            "dialog": {
+                "title": "提示",
+                "actions": [],
+                "body": "无按钮的弹框"
+            }
+        },
+        {
+            "type": "button",
+            "label": "只有一个确认按钮",
+            "actionType": "dialog",
+            "dialog": {
+                "title": "提示",
+                "actions": [{
+                  "type": "button",
+                  "actionType": "confirm",
+                  "label": "OK",
+                  "primary": true
+                }],
+                "body": "只有一个 OK 的弹框"
+            }
+        }
+    ]
+}
+```
+
 ## 弹框中配置表单
 
 ### 基本使用
@@ -631,7 +668,7 @@ feedback 反馈弹框是指，在 ajax 请求后，可以显示一个弹框，�
 
 > 注意上面的例子：如果你的触发`feedback`的按钮`actionType`为`ajax`时，为需要额外在按钮上配置`"close": true`
 
-#### 关闭 feedback 弹框时，不同时关闭上层弹框
+#### 取消 feedback 弹框时，不同时关闭上层弹框
 
 改场景只适用于**不请求接口关闭弹框**的场景，需要在 feedback 层添加`"skipRestOnCancel": true`
 
@@ -673,6 +710,10 @@ feedback 反馈弹框是指，在 ajax 请求后，可以显示一个弹框，�
   }
 }
 ```
+
+#### 确认 feedback 弹框时，不同时关闭上层弹框
+
+如果想让 feedback 弹框确认后，让之前触发这个 feedback 的按钮中断，那么需要配置 `skipRestOnConfirm`，这就意味着之前触发这个 feedback 的按钮必须重新提交一次。
 
 ### 根据条件显示 feedback
 

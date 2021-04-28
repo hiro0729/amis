@@ -22,7 +22,10 @@ interface ApiCacheConfig extends ApiObject {
 
 const apiCaches: Array<ApiCacheConfig> = [];
 
-export function normalizeApi(api: Api, defaultMethod?: string): ApiObject {
+export function normalizeApi(
+  api: Api,
+  defaultMethod: string = 'get'
+): ApiObject {
   if (typeof api === 'string') {
     let method = rSchema.test(api) ? RegExp.$1 : '';
     method && (api = api.replace(method + ':', ''));
@@ -165,7 +168,7 @@ function str2function(
   }
 }
 
-function responseAdaptor(ret: fetcherResult, api: ApiObject) {
+export function responseAdaptor(ret: fetcherResult, api: ApiObject) {
   const data = ret.data;
   let hasStatusField = true;
 
@@ -182,6 +185,11 @@ function responseAdaptor(ret: fetcherResult, api: ApiObject) {
     msgTimeout: data.msgTimeout,
     data: !data.data && !hasStatusField ? data : data.data // 兼容直接返回数据的情况
   };
+
+  // 兼容返回 schema 的情况，用于 app 模式
+  if (data && data.type) {
+    payload.data = data;
+  }
 
   if (payload.status == 422) {
     payload.errors = data.errors;
@@ -272,25 +280,42 @@ export function isApiOutdated(
   prevData: any,
   nextData: any
 ): nextApi is Api {
-  const url: string =
-    (nextApi && (nextApi as ApiObject).url) || (nextApi as string);
+  if (!nextApi) {
+    return false;
+  } else if (!prevApi) {
+    return true;
+  }
 
-  if (nextApi && (nextApi as ApiObject).autoRefresh === false) {
+  nextApi = normalizeApi(nextApi);
+
+  if (nextApi.autoRefresh === false) {
     return false;
   }
 
-  if (url && typeof url === 'string' && ~url.indexOf('$')) {
+  const trackExpression = nextApi.trackExpression ?? nextApi.url;
+
+  if (typeof trackExpression !== 'string' || !~trackExpression.indexOf('$')) {
+    return false;
+  }
+  prevApi = normalizeApi(prevApi);
+
+  let isModified = false;
+
+  if (nextApi.trackExpression || prevApi.trackExpression) {
+    isModified =
+      tokenize(prevApi.trackExpression || '', prevData) !==
+      tokenize(nextApi.trackExpression || '', nextData);
+  } else {
     prevApi = buildApi(prevApi as Api, prevData as object, {ignoreData: true});
     nextApi = buildApi(nextApi as Api, nextData as object, {ignoreData: true});
-
-    return !!(
-      prevApi.url !== nextApi.url &&
-      isValidApi(nextApi.url) &&
-      (!nextApi.sendOn || evalExpression(nextApi.sendOn, nextData))
-    );
+    isModified = prevApi.url !== nextApi.url;
   }
 
-  return false;
+  return !!(
+    isModified &&
+    isValidApi(nextApi.url) &&
+    (!nextApi.sendOn || evalExpression(nextApi.sendOn, nextData))
+  );
 }
 
 export function isValidApi(api: string) {

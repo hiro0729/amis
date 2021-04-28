@@ -134,7 +134,9 @@ export interface AppSchema extends BaseSchema {
   className?: SchemaClassName;
 }
 
-export interface AppProps extends RendererProps, Omit<AppSchema, 'type'> {
+export interface AppProps
+  extends RendererProps,
+    Omit<AppSchema, 'type' | 'className'> {
   children?: JSX.Element | ((props?: any) => JSX.Element);
   store: IAppStore;
 }
@@ -237,9 +239,7 @@ export default class App extends React.Component<AppProps, object> {
               <Html className={cx('AppLogo-html')} html={logo} />
             ) : logo ? (
               <img className={cx('AppLogo')} src={logo} />
-            ) : (
-              <i className="fa fa-paw" />
-            )}
+            ) : null}
             <span className="hidden-folded m-l-sm">{brandName}</span>
           </div>
         </div>
@@ -384,7 +384,7 @@ export default class App extends React.Component<AppProps, object> {
             ) : null}
 
             {render('page', store.schema, {
-              key: store.activePage?.id,
+              key: `${store.activePage?.id}-${store.schemaKey}`,
               data: store.pageData
             })}
           </>

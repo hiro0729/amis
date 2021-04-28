@@ -5,7 +5,6 @@
  */
 
 import React from 'react';
-import cx from 'classnames';
 import {ClassNamesFn, themeable} from '../theme';
 import {classPrefix, classnames} from '../themes/default';
 
@@ -36,6 +35,8 @@ interface SwitchProps {
   falseValue?: any;
   disabled?: boolean;
   readOnly?: boolean;
+  onText?: string;
+  offText?: string;
   checked?: boolean;
 }
 
@@ -72,6 +73,8 @@ export class Switch extends React.PureComponent<SwitchProps, any> {
       inline,
       trueValue,
       falseValue,
+      onText = '',
+      offText = '',
       disabled,
       readOnly,
       checked,
@@ -84,23 +87,33 @@ export class Switch extends React.PureComponent<SwitchProps, any> {
       (size && sizeMap[size] ? ` ${sizeMap[size]}` : '') +
       (level && levelMap[level] ? ` ${levelMap[level]}` : '');
 
+    const isChecked =
+      typeof checked !== 'undefined'
+        ? checked
+        : typeof value === 'undefined'
+        ? false
+        : value == trueValue;
+
     return (
-      <label className={cx(`Switch`, disabled ? 'is-disabled' : '', className)}>
+      <label
+        className={cx(
+          `Switch`,
+          isChecked ? 'is-checked' : '',
+          disabled ? 'is-disabled' : '',
+          className
+        )}
+      >
         <input
           type="checkbox"
-          checked={
-            typeof checked !== 'undefined'
-              ? checked
-              : typeof value === 'undefined'
-              ? false
-              : value == trueValue
-          }
+          checked={isChecked}
           onChange={this.hanldeCheck}
           disabled={disabled}
           readOnly={readOnly}
           {...rest}
         />
-        <i />
+
+        <span className="text">{isChecked ? onText : offText}</span>
+        <span className="slider"></span>
       </label>
     );
   }

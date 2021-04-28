@@ -41,7 +41,10 @@ function loadComponent(): Promise<any> {
 
 export interface DiffEditorProps
   extends FormControlProps,
-    Omit<DiffControlSchema, 'type'> {}
+    Omit<
+      DiffControlSchema,
+      'type' | 'className' | 'descriptionClassName' | 'inputClassName'
+    > {}
 
 function normalizeValue(value: any, language?: string) {
   if (value && typeof value !== 'string') {
@@ -124,16 +127,19 @@ export class DiffEditor extends React.Component<DiffEditorProps, any> {
       diffValue &&
       (diffValue !== prevProps.diffValue || data !== prevProps.data)
     ) {
-      this.originalEditor
-        .getModel()
-        .setValue(
-          isPureVariable(diffValue as string)
-            ? normalizeValue(
-                resolveVariableAndFilter(diffValue || '', data, '| raw'),
-                language
-              )
-            : normalizeValue(diffValue, language)
-        );
+      this.originalEditor.getModel().setValue(
+        isPureVariable(diffValue as string)
+          ? normalizeValue(
+              resolveVariableAndFilter(
+                diffValue || '',
+                data,
+                '| raw',
+                () => ''
+              ),
+              language
+            )
+          : normalizeValue(diffValue, language)
+      );
     }
 
     if (

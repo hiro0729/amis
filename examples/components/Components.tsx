@@ -6,6 +6,15 @@ export const components = [
     label: '布局',
     children: [
       {
+        label: '组件介绍',
+        path: '/zh-CN/components/index',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/components/index.md').then(
+            makeMarkdownRenderer
+          )
+      },
+      {
         label: 'Page 页面',
         path: '/zh-CN/components/page',
         getComponent: () =>
@@ -38,6 +47,15 @@ export const components = [
         getComponent: () =>
           // @ts-ignore
           import('../../docs/zh-CN/components/divider.md').then(
+            makeMarkdownRenderer
+          )
+      },
+      {
+        label: 'Flex 布局',
+        path: '/zh-CN/components/flex',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/components/flex.md').then(
             makeMarkdownRenderer
           )
       },
@@ -147,6 +165,15 @@ export const components = [
           )
       },
       {
+        label: 'Breadcrumb 面包屑',
+        path: '/zh-CN/components/breadcrumb',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/components/breadcrumb.md').then(
+            makeMarkdownRenderer
+          )
+      },
+      {
         label: 'Custom 自定义组件',
         path: '/zh-CN/components/custom',
         getComponent: () =>
@@ -180,6 +207,16 @@ export const components = [
         getComponent: () =>
           // @ts-ignore
           import('../../docs/zh-CN/components/nav.md').then(
+            makeMarkdownRenderer
+          )
+      },
+
+      {
+        label: 'AnchorNav 锚点导航',
+        path: '/zh-CN/components/anchor-nav',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/components/anchor-nav.md').then(
             makeMarkdownRenderer
           )
       }
@@ -303,6 +340,15 @@ export const components = [
         getComponent: () =>
           // @ts-ignore
           import('../../docs/zh-CN/components/form/combo.md').then(
+            makeMarkdownRenderer
+          )
+      },
+      {
+        label: 'Condition-Builder 条件组合',
+        path: '/zh-CN/components/form/condition-builder',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/components/form/condition-builder.md').then(
             makeMarkdownRenderer
           )
       },
@@ -737,6 +783,15 @@ export const components = [
           import('../../docs/zh-CN/components/form/year.md').then(
             makeMarkdownRenderer
           )
+      },
+      {
+        label: 'AnchorNav 锚点导航',
+        path: '/zh-CN/components/form/anchor-nav',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/components/form/anchor-nav.md').then(
+            makeMarkdownRenderer
+          )
       }
     ]
   },
@@ -921,11 +976,38 @@ export const components = [
           )
       },
       {
+        label: 'Markdown 渲染',
+        path: '/zh-CN/components/markdown',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/components/markdown.md').then(
+            makeMarkdownRenderer
+          )
+      },
+      {
         label: 'Progress 进度条',
         path: '/zh-CN/components/progress',
         getComponent: () =>
           // @ts-ignore
           import('../../docs/zh-CN/components/progress.md').then(
+            makeMarkdownRenderer
+          )
+      },
+      {
+        label: 'Steps 步骤条',
+        path: '/zh-CN/components/steps',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/components/steps.md').then(
+            makeMarkdownRenderer
+          )
+      },
+      {
+        label: 'Property 属性表',
+        path: '/zh-CN/components/property',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/components/property.md').then(
             makeMarkdownRenderer
           )
       },
@@ -944,6 +1026,16 @@ export const components = [
         getComponent: () =>
           // @ts-ignore
           import('../../docs/zh-CN/components/remark.md').then(
+            makeMarkdownRenderer
+          )
+      },
+
+      {
+        label: 'SearchBox 搜索框',
+        path: '/zh-CN/components/search-box',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/components/search-box.md').then(
             makeMarkdownRenderer
           )
       },
@@ -1017,7 +1109,6 @@ export const components = [
             makeMarkdownRenderer
           )
       },
-
       {
         label: 'Drawer 抽屉',
         path: '/zh-CN/components/drawer',
@@ -1043,6 +1134,16 @@ export const components = [
     label: '其他',
     children: [
       {
+        label: 'Avatar 头像',
+        path: '/zh-CN/components/avatar',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/components/avatar.md').then(
+            makeMarkdownRenderer
+          )
+      },
+
+      {
         label: 'Audio 音频',
         path: '/zh-CN/components/audio',
         getComponent: () =>
@@ -1061,7 +1162,15 @@ export const components = [
             makeMarkdownRenderer
           )
       },
-
+      {
+        label: 'Badge 角标',
+        path: '/zh-CN/components/badge',
+        getComponent: () =>
+          // @ts-ignore
+          import('../../docs/zh-CN/components/badge.md').then(
+            makeMarkdownRenderer
+          )
+      },
       {
         label: 'Wizard 向导',
         path: '/zh-CN/components/wizard',

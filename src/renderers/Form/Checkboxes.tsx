@@ -10,7 +10,7 @@ import Checkbox from '../../components/Checkbox';
 import chunk from 'lodash/chunk';
 import {Icon} from '../../components/icons';
 import {Api} from '../../types';
-import {autobind} from '../../utils/helper';
+import {autobind, hasAbility} from '../../utils/helper';
 
 /**
  * 复选框
@@ -37,7 +37,14 @@ export interface CheckboxesControlSchema extends FormOptionsControl {
 
 export interface CheckboxesProps
   extends OptionsControlProps,
-    Omit<CheckboxesControlSchema, 'options'> {
+    Omit<
+      CheckboxesControlSchema,
+      | 'options'
+      | 'type'
+      | 'className'
+      | 'descriptionClassName'
+      | 'inputClassName'
+    > {
   placeholder?: any;
   itemClassName?: string;
   columnsCount?: number;
@@ -59,6 +66,7 @@ export default class CheckboxesControl extends React.Component<
     multiple: true,
     placeholder: 'placeholder.noOption',
     creatable: false,
+    inline: true,
     createBtnLabel: 'Select.createLabel'
   };
 
@@ -157,7 +165,7 @@ export default class CheckboxesControl extends React.Component<
         description={option.description}
       >
         {String(option[labelField || 'label'])}
-        {removable ? (
+        {removable && hasAbility(option, 'removable') ? (
           <a data-tooltip={__('Select.clear')} data-position="left">
             <Icon
               icon="minus"
@@ -166,7 +174,7 @@ export default class CheckboxesControl extends React.Component<
             />
           </a>
         ) : null}
-        {editable ? (
+        {editable && hasAbility(option, 'editable') ? (
           <a data-tooltip="编辑" data-position="left">
             <Icon
               icon="pencil"

@@ -22,6 +22,7 @@ import {
   withRouter
 } from 'react-router';
 import Select from '../../src/components/Select';
+import InputBox from '../../src/components/InputBox';
 import DocSearch from './DocSearch';
 import Doc from './Doc';
 import DocNavCN from './DocNavCN';
@@ -145,12 +146,15 @@ export class App extends React.PureComponent<{
     locale: localStorage.getItem('locale')
       ? localStorage.getItem('locale').replace('zh-cn', 'zh-CN')
       : '',
-    navigations: []
+    navigations: [],
+    filter: '' // 导航过滤，方便找组件
   };
 
   constructor(props) {
     super(props);
     this.setNavigations = this.setNavigations.bind(this);
+    this.setNavigationFilter = this.setNavigationFilter.bind(this);
+    document.querySelector('body').classList.add(this.state.theme.value);
   }
 
   componentDidUpdate(preProps, preState) {
@@ -182,7 +186,8 @@ export class App extends React.PureComponent<{
 
   setNavigations(items) {
     this.setState({
-      navigations: items
+      navigations: items,
+      filter: ''
     });
   }
 
@@ -193,7 +198,7 @@ export class App extends React.PureComponent<{
     if (location.pathname === '/edit') {
       return (
         <div id="headerBar" className="box-shadow bg-dark">
-          <div className={`${theme.ns}Layout-brand`}>AMis 可视化编辑器</div>
+          <div className={`${theme.ns}Layout-brand`}>amis 可视化编辑器</div>
         </div>
       );
     }
@@ -234,8 +239,8 @@ export class App extends React.PureComponent<{
 
         <div
           className={`${theme.ns}Layout-headerBar ${
-            docPage ? 'DocLayout-headerBar' : ''
-          } pc:flex items-center`}
+            docPage ? 'DocLayout-headerBar pc:inline-flex' : 'pc:flex'
+          } items-center`}
         >
           {docPage ? null : (
             <Button
@@ -266,14 +271,17 @@ export class App extends React.PureComponent<{
             <Link to={`${ContextPath}/zh-CN/style`} activeClassName="is-active">
               样式
             </Link>
-            <Link to={`${ContextPath}/examples`} activeClassName="is-active">
+            <Link
+              to={`${ContextPath}/examples/index`}
+              activeClassName="is-active"
+            >
               示例
             </Link>
             <a
               href="https://github.com/fex-team/amis-editor-demo"
               target="_blank"
             >
-              可视化编辑器
+              编辑器
             </a>
             {/* <a href="https://suda.bce.baidu.com" target="_blank">
               爱速搭
@@ -349,20 +357,50 @@ export class App extends React.PureComponent<{
     );
   }
 
+  setNavigationFilter(value: string) {
+    this.setState({
+      filter: value
+    });
+  }
+
   renderNavigation() {
-    return <div className="Doc-navigation">{this.renderAsideNav()}</div>;
+    return (
+      <div className="Doc-navigation">
+        <InputBox
+          theme={this.state.theme.value}
+          placeholder={'过滤...'}
+          value={this.state.filter || ''}
+          onChange={this.setNavigationFilter}
+          className="m-b m-r-md"
+          clearable={false}
+        />
+        {this.renderAsideNav()}
+      </div>
+    );
   }
 
   renderAsideNav() {
+    const filterReg = new RegExp(
+      this.state.filter.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&'),
+      'i'
+    );
+
     return (
       <AsideNav
         navigations={this.state.navigations.map(item => ({
           ...item,
           children: item.children
-            ? item.children.map(item => ({
-                ...item,
-                className: 'is-top'
-              }))
+            ? item.children
+                .filter(item => {
+                  if (item.label) {
+                    return filterReg.exec(item.label);
+                  }
+                  return true;
+                })
+                .map(item => ({
+                  ...item,
+                  className: 'is-top'
+                }))
             : []
         }))}
         renderLink={({
@@ -478,7 +516,7 @@ export class App extends React.PureComponent<{
     const theme = this.state.theme;
     const location = this.props.location;
 
-    if (/examples\/jssdk/.test(location.pathname)) {
+    if (/examples\/app/.test(location.pathname)) {
       return (
         <>
           <ToastComponent theme={theme.value} locale={this.state.locale} />
@@ -527,6 +565,27 @@ export class App extends React.PureComponent<{
             show={this.state.offScreen}
             position="left"
           >
+            <ul className={`HeaderLinks`}>
+              <Link
+                to={`${ContextPath}/zh-CN/docs`}
+                activeClassName="is-active"
+              >
+                文档
+              </Link>
+
+              <Link
+                to={`${ContextPath}/zh-CN/components`}
+                activeClassName="is-active"
+              >
+                组件
+              </Link>
+              <Link
+                to={`${ContextPath}/zh-CN/style`}
+                activeClassName="is-active"
+              >
+                样式
+              </Link>
+            </ul>
             {this.renderNavigation()}
           </Drawer>
 
@@ -640,7 +699,7 @@ export default function entry({pathPrefix}) {
         {/* expamles */}
         <Redirect
           from={`${ContextPath}/examples`}
-          to={`${ContextPath}/examples/pages/simple`}
+          to={`${ContextPath}/examples/index`}
         />
         <Redirect
           from={`${ContextPath}/${locate}/style`}

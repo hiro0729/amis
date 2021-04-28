@@ -106,6 +106,7 @@ export class Custom extends React.Component<CustomProps, object> {
       id,
       wrapperComponent,
       inline,
+      translate: __,
       classnames: cx
     } = this.props;
     const Component = wrapperComponent || inline ? 'span' : 'div';

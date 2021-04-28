@@ -184,7 +184,10 @@ export interface OptionsConfig extends OptionsBasicConfig {
 // 下发给注册进来的组件的属性。
 export interface OptionsControlProps
   extends FormControlProps,
-    Omit<FormOptionsControl, 'type'> {
+    Omit<
+      FormOptionsControl,
+      'type' | 'className' | 'descriptionClassName' | 'inputClassName'
+    > {
   options: Array<Option>;
   onToggle: (
     option: Option,
@@ -207,7 +210,9 @@ export interface OptionsControlProps
 }
 
 // 自己接收的属性。
-export interface OptionsProps extends FormControlProps, OptionProps {
+export interface OptionsProps
+  extends FormControlProps,
+    Omit<OptionProps, 'className'> {
   source?: Api;
   deferApi?: Api;
   creatable?: boolean;
@@ -600,12 +605,13 @@ export function registerOptionsControl(config: OptionsConfig) {
       } = this.props;
 
       if (formItem && isPureVariable(source as string)) {
-        formItem.setOptions(
-          normalizeOptions(
-            resolveVariableAndFilter(source as string, data, '| raw') || []
-          ),
-          onChange
-        );
+        isAlive(formItem) &&
+          formItem.setOptions(
+            normalizeOptions(
+              resolveVariableAndFilter(source as string, data, '| raw') || []
+            ),
+            onChange
+          );
         return;
       } else if (!formItem || !isEffectiveApi(source, data)) {
         return;
@@ -624,10 +630,6 @@ export function registerOptionsControl(config: OptionsConfig) {
     @autobind
     deferLoad(option: Option) {
       const {deferApi, source, env, formItem, data} = this.props;
-
-      if (option.loaded) {
-        return;
-      }
 
       const api = option.deferApi || deferApi || source;
 
@@ -718,12 +720,15 @@ export function registerOptionsControl(config: OptionsConfig) {
           }
         ];
       }
+      const parent = Array.isArray(idx)
+        ? getTree(model.options, idx.slice(0, -1))
+        : undefined;
 
-      const ctx = createObject(
+      const ctx: any = createObject(
         data,
         Array.isArray(idx)
           ? {
-              parent: getTree(model.options, idx.slice(0, -1)),
+              parent: parent,
               ...value
             }
           : value
@@ -777,9 +782,12 @@ export function registerOptionsControl(config: OptionsConfig) {
         };
       }
 
-      // 如果配置了 source 且配置了 addApi 直接重新拉取接口就够了
-      // 不能不判断 addApi 就刷新，因为有些场景就是临时添加的。
-      if (source && addApi) {
+      // 如果是懒加载的，只懒加载当前节点。
+      if (parent?.defer) {
+        this.deferLoad(parent);
+      } else if (source && addApi) {
+        // 如果配置了 source 且配置了 addApi 直接重新拉取接口就够了
+        // 不能不判断 addApi 就刷新，因为有些场景就是临时添加的。
         this.reload();
       } else {
         // 否则直接前端变更 options

@@ -74,6 +74,180 @@ amis 中有大量的功能类 class 可以使用，即可以用在 schema 中，
 
 > 你可能需要掌握一些基础的 CSS 知识
 
+## 字体颜色
+
+实际颜色取决于主题，下面示例是默认主题的颜色。
+
+```css
+.text-primary {
+  color: #7266ba;
+}
+
+.text-primary-lt {
+  color: #6254b2;
+}
+
+.text-primary-lter {
+  color: #564aa3;
+}
+
+.text-primary-dk {
+  color: #6254b2;
+}
+
+.text-primary-dker {
+  color: #564aa3;
+}
+
+.text-info {
+  color: #23b7e5;
+}
+
+.text-info-lt {
+  color: #19a9d5;
+}
+
+.text-info-lter {
+  color: #1797be;
+}
+
+.text-info-dk {
+  color: #19a9d5;
+}
+
+.text-info-dker {
+  color: #1797be;
+}
+
+.text-success {
+  color: #27c24c;
+}
+
+.text-success-lt {
+  color: #23ad44;
+}
+
+.text-success-lter {
+  color: #1e983b;
+}
+
+.text-success-dk {
+  color: #23ad44;
+}
+
+.text-success-dker {
+  color: #1e983b;
+}
+
+.text-warning {
+  color: #fad733;
+}
+
+.text-warning-lt {
+  color: #f9d21a;
+}
+
+.text-warning-lter {
+  color: #f4ca06;
+}
+
+.text-warning-dk {
+  color: #f9d21a;
+}
+
+.text-warning-dker {
+  color: #f4ca06;
+}
+
+.text-danger {
+  color: #f05050;
+}
+
+.text-danger-lt {
+  color: #ee3939;
+}
+
+.text-danger-lter {
+  color: #ec2121;
+}
+
+.text-danger-dk {
+  color: #ee3939;
+}
+
+.text-danger-dker {
+  color: #ec2121;
+}
+
+.text-dark {
+  color: #3a3f51;
+}
+
+.text-dark-lt {
+  color: #2f3342;
+}
+
+.text-dark-lter {
+  color: #252833;
+}
+
+.text-dark-dk {
+  color: #2f3342;
+}
+
+.text-dark-dker {
+  color: #252833;
+}
+
+.text-white {
+  color: #fff;
+}
+
+.text-white-lt {
+  color: #f2f2f2;
+}
+
+.text-white-lter {
+  color: #e6e6e6;
+}
+
+.text-white-dk {
+  color: #f2f2f2;
+}
+
+.text-white-dker {
+  color: #e6e6e6;
+}
+
+.text-black {
+  color: #1c2b36;
+}
+
+.text-black-lt {
+  color: #131e25;
+}
+
+.text-black-lter {
+  color: #0b1014;
+}
+
+.text-black-dk {
+  color: #131e25;
+}
+
+.text-black-dker {
+  color: #0b1014;
+}
+
+.text-muted {
+  color: var(--text--muted-color);
+}
+
+.text-loud {
+  color: var(--text--loud-color);
+}
+```
+
 ## 图标
 
 amis 集成了 [fontawesome](http://fontawesome.io/icons/)，所以关于图标部分，请前往 [fontawesome](http://fontawesome.io/icons/) 查看。
@@ -657,6 +831,14 @@ amis 集成了 [fontawesome](http://fontawesome.io/icons/)，所以关于图标�
 }
 .text-right {
   text-align: right;
+}
+.word-break {
+  white-space: normal;
+  word-break: break-all;
+  word-wrap: break-word;
+}
+.white-space-pre {
+  white-space: pre;
 }
 ```
 

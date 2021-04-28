@@ -44,7 +44,7 @@ import {toDataURL, getImageDimensions} from '../../utils/image';
 import {TableBody} from './TableBody';
 import {TplSchema} from '../Tpl';
 import {MappingSchema} from '../Mapping';
-import {isAlive} from 'mobx-state-tree';
+import {isAlive, getSnapshot} from 'mobx-state-tree';
 
 /**
  * 表格列，不指定类型时默认为文本类型。
@@ -239,7 +239,7 @@ export interface TableProps extends RendererProps {
   headerClassName?: string;
   footerClassName?: string;
   store: ITableStore;
-  columns?: Array<TableColumn>;
+  columns?: Array<any>;
   headingClassName?: string;
   toolbarClassName?: string;
   headerToolbarClassName?: string;
@@ -248,6 +248,7 @@ export interface TableProps extends RendererProps {
   source?: string;
   selectable?: boolean;
   selected?: Array<any>;
+  maxKeepItemSelectionLength?: number;
   valueField?: string;
   draggable?: boolean;
   columnsTogglable?: boolean | 'auto';
@@ -276,7 +277,7 @@ export interface TableProps extends RendererProps {
   onSave?: (
     items: Array<object> | object,
     diff: Array<object> | object,
-    rowIndexes: Array<number> | number,
+    rowIndexes: Array<string> | string,
     unModifiedItems?: Array<object>,
     rowOrigins?: Array<object> | object,
     resetOnFailed?: boolean
@@ -458,7 +459,9 @@ export default class Table extends React.Component<TableProps, object> {
       hideCheckToggler,
       combineNum,
       expandConfig,
-      formItem
+      formItem,
+      keepItemSelectionOnPageChange,
+      maxKeepItemSelectionLength
     } = this.props;
 
     store.update({
@@ -475,7 +478,9 @@ export default class Table extends React.Component<TableProps, object> {
       itemCheckableOn,
       itemDraggableOn,
       hideCheckToggler,
-      combineNum
+      combineNum,
+      keepItemSelectionOnPageChange,
+      maxKeepItemSelectionLength
     });
 
     formItem && isAlive(formItem) && formItem.setSubStore(store);
@@ -649,7 +654,7 @@ export default class Table extends React.Component<TableProps, object> {
     onSave(
       item.data,
       difference(item.data, item.pristine, ['id', primaryField]),
-      item.index,
+      item.path,
       undefined,
       item.pristine,
       resetOnFailed
@@ -676,7 +681,7 @@ export default class Table extends React.Component<TableProps, object> {
     }
 
     const rows = store.modifiedRows.map(item => item.data);
-    const rowIndexes = store.modifiedRows.map(item => item.index);
+    const rowIndexes = store.modifiedRows.map(item => item.path);
     const diff = store.modifiedRows.map(item =>
       difference(item.data, item.pristine, ['id', primaryField])
     );
@@ -759,7 +764,16 @@ export default class Table extends React.Component<TableProps, object> {
     const clip = (this.table as HTMLElement).getBoundingClientRect();
     const offsetY =
       this.props.affixOffsetTop ?? this.props.env.affixOffsetTop ?? 0;
-    const affixed = clip.top < offsetY && clip.top + clip.height - 40 > offsetY;
+    const headingHeight =
+      dom.querySelector(`.${ns}Table-heading`)?.getBoundingClientRect()
+        .height || 0;
+    const headerHeight =
+      dom.querySelector(`.${ns}Table-headToolbar`)?.getBoundingClientRect()
+        .height || 0;
+
+    const affixed =
+      clip.top - headerHeight - headingHeight < offsetY &&
+      clip.top + clip.height - 40 > offsetY;
     const affixedDom = dom.querySelector(`.${ns}Table-fixedTop`) as HTMLElement;
 
     affixedDom.style.cssText += `top: ${offsetY}px;width: ${
@@ -1252,6 +1266,7 @@ export default class Table extends React.Component<TableProps, object> {
               classPrefix={ns}
               partial={!store.allChecked}
               checked={store.someChecked}
+              disabled={store.disabledHeadCheckbox}
               onChange={this.handleCheckAll}
             />
           ) : (
@@ -1434,16 +1449,15 @@ export default class Table extends React.Component<TableProps, object> {
     if (column.type === '__checkme') {
       return (
         <td key={props.key} className={cx(column.pristine.className)}>
-          {item.checkable ? (
-            <Checkbox
-              classPrefix={ns}
-              type={multiple ? 'checkbox' : 'radio'}
-              checked={item.checked}
-              onChange={
-                checkOnItemClick ? noop : this.handleCheck.bind(this, item)
-              }
-            />
-          ) : null}
+          <Checkbox
+            classPrefix={ns}
+            type={multiple ? 'checkbox' : 'radio'}
+            checked={item.checked}
+            disabled={item.checkdisable}
+            onChange={
+              checkOnItemClick ? noop : this.handleCheck.bind(this, item)
+            }
+          />
         </td>
       );
     } else if (column.type === '__dragme') {
@@ -1648,14 +1662,24 @@ export default class Table extends React.Component<TableProps, object> {
           </tr>
         </thead>
 
-        {headerOnly ? null : (
+        {headerOnly ? null : !rows.length ? (
+          <tbody>
+            <tr className={cx('Table-placeholder')}>
+              <td colSpan={columns.length}>
+                {render(
+                  'placeholder',
+                  translate(placeholder || 'placeholder.noData')
+                )}
+              </td>
+            </tr>
+          </tbody>
+        ) : (
           <TableBody
             tableClassName={cx(
               store.combineNum > 0 ? 'Table-table--withCombine' : '',
               tableClassName
             )}
             classnames={cx}
-            placeholder={placeholder}
             render={render}
             renderCell={this.renderCell}
             onCheck={this.handleCheck}
@@ -1697,7 +1721,8 @@ export default class Table extends React.Component<TableProps, object> {
       this.renderedToolbars.push(type);
       return this.renderDragToggler();
     } else if (type === 'export-excel') {
-      return this.renderExportExcel();
+      this.renderedToolbars.push(type);
+      return this.renderExportExcel(toolbar);
     }
 
     return void 0;
@@ -1779,13 +1804,15 @@ export default class Table extends React.Component<TableProps, object> {
     );
   }
 
-  renderExportExcel() {
+  renderExportExcel(toolbar: SchemaNode) {
     const {
       store,
+      env,
       classPrefix: ns,
       classnames: cx,
       translate: __,
-      columns
+      columns,
+      data
     } = this.props;
 
     if (!columns) {
@@ -1797,9 +1824,33 @@ export default class Table extends React.Component<TableProps, object> {
         classPrefix={ns}
         onClick={() => {
           import('exceljs').then(async (ExcelJS: any) => {
-            if (!store.data.items || store.data.items.length === 0) {
+            let rows = [];
+            let tmpStore;
+            // 支持配置 api 远程获取
+            if (typeof toolbar === 'object' && (toolbar as Schema).api) {
+              const res = await env.fetcher((toolbar as Schema).api, data);
+              if (!res.data) {
+                env.notify('warning', __('placeholder.noData'));
+                return;
+              }
+              if (Array.isArray(res.data)) {
+                rows = res.data;
+              } else {
+                rows = res.data.rows || res.data.items;
+              }
+              // 因为很多方法是 store 里的，所以需要构建 store 来处理
+              tmpStore = TableStore.create(getSnapshot(store));
+              tmpStore.initRows(rows);
+              rows = tmpStore.rows;
+            } else {
+              rows = store.rows;
+            }
+
+            if (rows.length === 0) {
+              env.notify('warning', __('placeholder.noData'));
               return;
             }
+
             const workbook = new ExcelJS.Workbook();
             const worksheet = workbook.addWorksheet('sheet', {
               properties: {defaultColWidth: 15}
@@ -1823,7 +1874,7 @@ export default class Table extends React.Component<TableProps, object> {
             };
             // 数据从第二行开始
             let rowIndex = 1;
-            for (const row of store.rows) {
+            for (const row of rows) {
               rowIndex += 1;
               const sheetRow = worksheet.getRow(rowIndex);
               let columIndex = 0;
@@ -1952,7 +2003,7 @@ export default class Table extends React.Component<TableProps, object> {
         }}
         size="sm"
       >
-        {__('CRUD.exportExcel')}
+        {(toolbar as Schema).label || __('CRUD.exportExcel')}
       </Button>
     );
   }

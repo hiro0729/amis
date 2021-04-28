@@ -36,12 +36,12 @@ exports[`Renderer:button 1`] = `
             class="a-Button a-Button--default a-Form-control"
             type="button"
           >
-            <span>
-              Text
-            </span>
             <i
               class="a-Button-icon fa fa-plus"
             />
+            <span>
+              Text
+            </span>
           </button>
         </div>
         <div
@@ -168,12 +168,12 @@ exports[`Renderer:button 2`] = `
             class="a-Button a-Button--default a-Form-control"
             type="button"
           >
-            <span>
-              Text
-            </span>
             <i
               class="a-Button-icon fa fa-plus"
             />
+            <span>
+              Text
+            </span>
           </button>
         </div>
         <div
@@ -259,6 +259,68 @@ exports[`Renderer:button 2`] = `
         class="resize-sensor-appear"
         style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: scroll; z-index: -1; visibility: hidden;animation-name: apearSensor; animation-duration: 0.2s;"
       />
+    </div>
+  </div>
+  <div
+    class="amis-dialog-widget a-Modal a-Modal--1th"
+    role="dialog"
+  >
+    <div
+      class="a-Modal-overlay in"
+    />
+    <div
+      class="a-Modal-content in"
+    >
+      <div
+        class="a-Modal-header"
+      >
+        <a
+          class="a-Modal-close"
+          data-position="left"
+          data-tooltip="关闭"
+        >
+          <icon-mock
+            classname="icon icon-close"
+            icon="close"
+          />
+        </a>
+        <div
+          class="a-Modal-title"
+        >
+          提示
+        </div>
+      </div>
+      <div
+        class="a-Modal-body"
+      >
+        <span
+          class="a-TplField"
+        >
+          <span>
+            对，你刚点击了！
+          </span>
+        </span>
+      </div>
+      <div
+        class="a-Modal-footer"
+      >
+        <button
+          class="a-Button a-Button--default"
+          type="button"
+        >
+          <span>
+            取消
+          </span>
+        </button>
+        <button
+          class="a-Button a-Button--primary"
+          type="button"
+        >
+          <span>
+            确认
+          </span>
+        </button>
+      </div>
     </div>
   </div>
 </div>

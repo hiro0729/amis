@@ -1,7 +1,7 @@
-import React from 'react';
+import React, {Suspense} from 'react';
 import {FormItem, FormControlProps, FormBaseControl} from './Item';
 import 'cropperjs/dist/cropper.css';
-import Cropper from 'react-cropper';
+const Cropper = React.lazy(() => import('react-cropper'));
 import DropZone from 'react-dropzone';
 import {FileRejection} from 'react-dropzone';
 import 'blueimp-canvastoblob';
@@ -23,6 +23,7 @@ import {
   SchemaTokenizeableString,
   SchemaUrlPath
 } from '../../Schema';
+import {filter} from '../../utils/tpl';
 
 /**
  * Image 图片上传控件
@@ -222,13 +223,31 @@ export interface ImageControlSchema extends FormBaseControl {
   autoFill?: {
     [propName: string]: SchemaTokenizeableString;
   };
+
+  /**
+   * 默认占位图图片地址
+   */
+  frameImage?: SchemaUrlPath;
+
+  /**
+   * 是否开启固定尺寸
+   */
+  fixedSize?: boolean;
+
+  /**
+   * 固定尺寸的 CSS类名
+   */
+  fixedSizeClassName?: SchemaClassName;
 }
 
 let preventEvent = (e: any) => e.stopPropagation();
 
 export interface ImageProps
   extends FormControlProps,
-    Omit<ImageControlSchema, 'type'> {
+    Omit<
+      ImageControlSchema,
+      'type' | 'className' | 'descriptionClassName' | 'inputClassName'
+    > {
   onImageEnlarge?: (
     info: Pick<ImageThumbProps, 'src' | 'originalSrc' | 'title' | 'caption'> & {
       index?: number;
@@ -248,6 +267,7 @@ export interface ImageState {
   error?: string;
   cropFile?: FileValue;
   submitOnChange?: boolean;
+  frameImageWidth?: number;
 }
 
 export interface FileValue {
@@ -280,7 +300,7 @@ export default class ImageControl extends React.Component<
     accept: 'image/jpeg, image/jpg, image/png, image/gif',
     receiver: '/api/upload',
     hideUploadButton: false,
-    placeholder: 'Image.placeholder点击选择图片或者将图片拖入该区域',
+    placeholder: 'Image.placeholder',
     joinValues: true,
     extractValue: false,
     delimiter: ',',
@@ -343,6 +363,7 @@ export default class ImageControl extends React.Component<
   files: Array<FileValue | FileX> = [];
   cropper = React.createRef<Cropper>();
   dropzone = React.createRef<any>();
+  frameImageRef = React.createRef<any>();
   current: FileValue | FileX | null = null;
   resolve?: (value?: any) => void;
   emitValue: any;
@@ -371,7 +392,8 @@ export default class ImageControl extends React.Component<
     this.state = {
       ...this.state,
       files: (this.files = files),
-      crop: this.buildCrop(props)
+      crop: this.buildCrop(props),
+      frameImageWidth: 0
     };
 
     this.sendFile = this.sendFile.bind(this);
@@ -383,6 +405,7 @@ export default class ImageControl extends React.Component<
     this.handleDropRejected = this.handleDropRejected.bind(this);
     this.cancelCrop = this.cancelCrop.bind(this);
     this.handleImageLoaded = this.handleImageLoaded.bind(this);
+    this.handleFrameImageLoaded = this.handleFrameImageLoaded.bind(this);
     this.startUpload = this.startUpload.bind(this);
     this.stopUpload = this.stopUpload.bind(this);
     this.toggleUpload = this.toggleUpload.bind(this);
@@ -930,7 +953,7 @@ export default class ImageControl extends React.Component<
         Math.abs(width / height - limit.aspectRatio) > 0.01
       ) {
         error = __(limit.aspectRatioLabel || 'Image.limitRatio', {
-          ratio: limit.aspectRatio
+          ratio: limit.aspectRatio.toFixed(2)
         });
       }
 
@@ -1055,6 +1078,22 @@ export default class ImageControl extends React.Component<
     img.src = imgDom.src;
   }
 
+  handleFrameImageLoaded(e: React.UIEvent<any>) {
+    const imgDom = e.currentTarget;
+    const img = new Image();
+    const {clientHeight} = this.frameImageRef.current;
+
+    const _this = this;
+    img.onload = function () {
+      const ratio = (this as any).width / (this as any).height;
+      const finalWidth = (ratio * (clientHeight - 2)).toFixed(2);
+      _this.setState({
+        frameImageWidth: +finalWidth
+      });
+    };
+    img.src = imgDom.src;
+  }
+
   validate(): any {
     const __ = this.props.translate;
 
@@ -1092,22 +1131,38 @@ export default class ImageControl extends React.Component<
       thumbMode,
       thumbRatio,
       reCropable,
+      frameImage,
+      fixedSize,
+      fixedSizeClassName,
       translate: __
     } = this.props;
-
-    const {files, error, crop, uploading, cropFile} = this.state;
+    const {
+      files,
+      error,
+      crop,
+      uploading,
+      cropFile,
+      frameImageWidth
+    } = this.state;
+    let frameImageStyle: any = {};
+    if (fixedSizeClassName && frameImageWidth && fixedSize) {
+      frameImageStyle.width = frameImageWidth;
+    }
+    const filterFrameImage = filter(frameImage, this.props.data, '| raw');
 
     const hasPending = files.some(file => file.state == 'pending');
     return (
       <div className={cx(`ImageControl`, className)}>
         {cropFile ? (
           <div className={cx('ImageControl-cropperWrapper')}>
-            <Cropper {...crop} ref={this.cropper} src={cropFile.preview} />
+            <Suspense fallback={<div>...</div>}>
+              <Cropper {...crop} ref={this.cropper} src={cropFile.preview} />
+            </Suspense>
             <div className={cx('ImageControl-croperToolbar')}>
               <a
                 className={cx('ImageControl-cropCancel')}
                 onClick={this.cancelCrop}
-                data-tooltip={__('cancle')}
+                data-tooltip={__('cancel')}
                 data-position="left"
               >
                 <Icon icon="close" className="icon" />
@@ -1144,7 +1199,7 @@ export default class ImageControl extends React.Component<
                   onClick: preventEvent,
                   onPaste: this.handlePaste,
                   className: cx('ImageControl-dropzone', {
-                    disabled,
+                    'is-disabled': disabled,
                     'is-empty': !files.length,
                     'is-active': isDragActive
                   })
@@ -1167,12 +1222,18 @@ export default class ImageControl extends React.Component<
                       ? files.map((file, key) => (
                           <div
                             key={file.id || key}
-                            className={cx('ImageControl-item', {
-                              'is-uploaded': file.state !== 'uploading',
-                              'is-invalid':
-                                file.state === 'error' ||
-                                file.state === 'invalid'
-                            })}
+                            className={cx(
+                              'ImageControl-item',
+                              {
+                                'is-uploaded': file.state !== 'uploading',
+                                'is-invalid':
+                                  file.state === 'error' ||
+                                  file.state === 'invalid'
+                              },
+                              fixedSize ? 'ImageControl-fixed-size' : '',
+                              fixedSize ? fixedSizeClassName : ''
+                            )}
+                            style={frameImageStyle}
                           >
                             {file.state === 'invalid' ||
                             file.state === 'error' ? (
@@ -1191,9 +1252,14 @@ export default class ImageControl extends React.Component<
                                 </a>
 
                                 <a
-                                  className={cx('ImageControl-retryBtn', {
-                                    'is-disabled': disabled
-                                  })}
+                                  className={cx(
+                                    'ImageControl-retryBtn',
+                                    {
+                                      'is-disabled': disabled
+                                    },
+                                    fixedSize ? 'ImageControl-fixed-size' : '',
+                                    fixedSize ? fixedSizeClassName : ''
+                                  )}
                                   onClick={this.handleRetry.bind(this, key)}
                                 >
                                   <Icon icon="retry" className="icon" />
@@ -1218,7 +1284,11 @@ export default class ImageControl extends React.Component<
                                 </a>
                                 <div
                                   key="info"
-                                  className={cx('ImageControl-itemInfo')}
+                                  className={cx(
+                                    'ImageControl-itemInfo',
+                                    fixedSize ? 'ImageControl-fixed-size' : '',
+                                    fixedSize ? fixedSizeClassName : ''
+                                  )}
                                 >
                                   <p>{__('File.uploading')}</p>
                                   <div className={cx('ImageControl-progress')}>
@@ -1239,7 +1309,10 @@ export default class ImageControl extends React.Component<
                               <>
                                 <ImageComponent
                                   key="image"
-                                  className={cx('ImageControl-image')}
+                                  className={cx(
+                                    'ImageControl-image',
+                                    fixedSize ? 'Image-thumb--fixed-size' : ''
+                                  )}
                                   onLoad={this.handleImageLoaded.bind(
                                     this,
                                     key
@@ -1330,14 +1403,34 @@ export default class ImageControl extends React.Component<
                     {(multiple && (!maxLength || files.length < maxLength)) ||
                     (!multiple && !files.length) ? (
                       <label
-                        className={cx('ImageControl-addBtn', {
-                          'is-disabled': disabled
-                        })}
+                        className={cx(
+                          'ImageControl-addBtn',
+                          {
+                            'is-disabled': disabled
+                          },
+                          fixedSize ? 'ImageControl-fixed-size' : '',
+                          fixedSize ? fixedSizeClassName : ''
+                        )}
+                        style={frameImageStyle}
                         onClick={this.handleSelect}
                         data-tooltip={__(placeholder)}
                         data-position="right"
+                        ref={this.frameImageRef}
                       >
-                        <Icon icon="plus" className="icon" />
+                        {filterFrameImage ? (
+                          <ImageComponent
+                            key="upload-default-image"
+                            src={filterFrameImage}
+                            className={cx(
+                              fixedSize ? 'Image-thumb--fixed-size' : ''
+                            )}
+                            onLoad={this.handleFrameImageLoaded.bind(this)}
+                            thumbMode={thumbMode}
+                            thumbRatio={thumbRatio}
+                          />
+                        ) : (
+                          <Icon icon="plus" className="icon" />
+                        )}
 
                         {isFocused ? (
                           <span className={cx('ImageControl-pasteTip')}>

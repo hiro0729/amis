@@ -8,7 +8,7 @@ import {
 import {Schema} from '../../types';
 import {createObject, isEmpty} from '../../utils/helper';
 import {dataMapping} from '../../utils/tpl-builtin';
-import {SchemaCollection} from '../../Schema';
+import {SchemaClassName, SchemaCollection} from '../../Schema';
 
 /**
  * List 复选框
@@ -31,11 +31,24 @@ export interface ListControlSchema extends FormOptionsControl {
    * 可以自定义展示模板。
    */
   itemSchema?: SchemaCollection;
+
+  /**
+   * 支持配置 list div 的 css 类名。
+   * 比如：flex justify-between
+   */
+  listClassName?: SchemaClassName;
 }
 
 export interface ListProps
   extends OptionsControlProps,
-    Omit<ListControlSchema, 'type' | 'options'> {}
+    Omit<
+      ListControlSchema,
+      | 'type'
+      | 'options'
+      | 'className'
+      | 'descriptionClassName'
+      | 'inputClassName'
+    > {}
 
 export default class ListControl extends React.Component<ListProps, any> {
   static propsList = ['itemSchema', 'value', 'renderFormItems'];
@@ -81,14 +94,16 @@ export default class ListControl extends React.Component<ListProps, any> {
       submitOnDBClick,
       itemSchema,
       data,
-      labelField
+      labelField,
+      listClassName,
+      translate: __
     } = this.props;
 
     let body: JSX.Element | null = null;
 
     if (options && options.length) {
       body = (
-        <div className={cx('ListControl-items')}>
+        <div className={cx('ListControl-items', listClassName)}>
           {options.map((option, key) => (
             <div
               key={key}
@@ -139,7 +154,9 @@ export default class ListControl extends React.Component<ListProps, any> {
         {body ? (
           body
         ) : (
-          <span className={cx('ListControl-placeholder')}>{placeholder}</span>
+          <span className={cx('ListControl-placeholder')}>
+            {__(placeholder)}
+          </span>
         )}
       </div>
     );

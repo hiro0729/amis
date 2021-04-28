@@ -24,7 +24,9 @@ export interface LinkSchema extends BaseSchema {
   body?: SchemaTpl;
 }
 
-export interface LinkProps extends RendererProps, LinkSchema {}
+export interface LinkProps
+  extends RendererProps,
+    Omit<LinkSchema, 'type' | 'className'> {}
 
 export class LinkField extends React.Component<LinkProps, object> {
   static defaultProps = {
@@ -42,7 +44,8 @@ export class LinkField extends React.Component<LinkProps, object> {
       htmlTarget,
       data,
       render,
-      translate: __
+      translate: __,
+      title
     } = this.props;
 
     let value = this.props.value;
@@ -53,6 +56,7 @@ export class LinkField extends React.Component<LinkProps, object> {
         href={finnalHref || value}
         target={htmlTarget || (blank ? '_blank' : '_self')}
         className={cx('Link', className)}
+        title={title}
       >
         {body ? render('body', body) : finnalHref || value || __('link')}
       </a>

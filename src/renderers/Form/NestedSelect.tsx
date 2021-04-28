@@ -33,6 +33,7 @@ export interface NestedSelectControlSchema extends FormOptionsControl {
 
 export interface NestedSelectProps extends OptionsControlProps {
   cascade?: boolean;
+  noResultsText?: string;
   withChildren?: boolean;
 }
 
@@ -51,6 +52,7 @@ export default class NestedSelectControl extends React.Component<
     cascade: false,
     withChildren: false,
     searchPromptText: 'Select.searchPromptText',
+    noResultsText: 'noResult',
     checkAll: true,
     checkAllLabel: '全选'
   };
@@ -66,6 +68,14 @@ export default class NestedSelectControl extends React.Component<
   @autobind
   domRef(ref: any) {
     this.target = ref;
+  }
+
+  componentDidUpdate(prevProps: NestedSelectProps) {
+    if (prevProps.options !== this.props.options) {
+      this.setState({
+        stack: [this.props.options]
+      });
+    }
   }
 
   @autobind
@@ -492,7 +502,13 @@ export default class NestedSelectControl extends React.Component<
   }
 
   renderOuter() {
-    const {popOverContainer, classnames: cx} = this.props;
+    const {
+      popOverContainer,
+      translate: __,
+      noResultsText,
+      classnames: cx,
+      options
+    } = this.props;
 
     let body = (
       <RootCloseWrapper
@@ -500,7 +516,13 @@ export default class NestedSelectControl extends React.Component<
         onRootClose={this.close}
       >
         <div className={cx('NestedSelect-menuOuter')}>
-          {this.renderOptions()}
+          {options.length ? (
+            this.renderOptions()
+          ) : (
+            <div className={cx('NestedSelect-noResult')}>
+              {__(noResultsText)}
+            </div>
+          )}
         </div>
       </RootCloseWrapper>
     );

@@ -5,12 +5,14 @@ export default {
     type: 'form',
     wrapWithPanel: false,
     target: 'window', // 直接修改location，当然也可以直接指向某个组件。
+    submitOnInit: true,
     controls: [
       {
         type: 'tree',
         name: 'cat',
         inputClassName: 'no-border',
         submitOnChange: true,
+        selectFirst: true,
         options: [
           {
             label: '分类1',
@@ -19,7 +21,17 @@ export default {
 
           {
             label: '分类2',
-            value: 'cat2'
+            value: 'cat2',
+            children: [
+              {
+                label: '分类 2.1',
+                value: 'cat2.1'
+              },
+              {
+                label: '分类 2.2',
+                value: 'cat2.2'
+              }
+            ]
           },
 
           {
@@ -96,7 +108,10 @@ export default {
   body: {
     type: 'crud',
     draggable: true,
-    api: '/api/sample',
+    api: {
+      url: '/api/sample',
+      sendOn: 'this.cat'
+    },
     filter: {
       title: '条件搜索',
       submitText: '',

@@ -144,7 +144,9 @@ function recoverFunctionType(config: object) {
   });
 }
 
-export interface ChartProps extends RendererProps, Omit<ChartSchema, 'type'> {
+export interface ChartProps
+  extends RendererProps,
+    Omit<ChartSchema, 'type' | 'className'> {
   chartRef?: (echart: any) => void;
   onDataFilter?: (config: any, echarts: any) => any;
   onChartWillMount?: (echarts: any) => void | Promise<void>;
@@ -165,7 +167,7 @@ export class Chart extends React.Component<ChartProps> {
   unSensor: Function;
   pending?: object;
   pendingCtx?: any;
-  timer: NodeJS.Timeout;
+  timer: ReturnType<typeof setTimeout>;
   mounted: boolean;
   reloadCancel?: Function;
 
@@ -233,12 +235,8 @@ export class Chart extends React.Component<ChartProps> {
 
   refFn(ref: any) {
     const chartRef = this.props.chartRef;
-    const {
-      chartTheme,
-      onChartWillMount,
-      onChartMount,
-      onChartUnMount
-    } = this.props;
+    const {chartTheme, onChartWillMount, onChartUnMount, env} = this.props;
+    let onChartMount = this.props.onChartMount;
 
     if (ref) {
       Promise.all([
@@ -268,7 +266,16 @@ export class Chart extends React.Component<ChartProps> {
           (ecStat as any).transform.clustering
         );
 
+        if (env.loadChartExtends) {
+          await env.loadChartExtends();
+        }
+
         this.echarts = echarts.init(ref, theme);
+
+        if (typeof onChartMount === 'string') {
+          onChartMount = new Function('chart', 'echarts') as any;
+        }
+
         onChartMount?.(this.echarts, echarts);
         this.echarts.on('click', this.handleClick);
         this.unSensor = resizeSensor(ref, () => {

@@ -84,7 +84,9 @@ export interface DialogSchema extends BaseSchema {
 
 export type DialogSchemaBase = Omit<DialogSchema, 'type'>;
 
-export interface DialogProps extends RendererProps, DialogSchema {
+export interface DialogProps
+  extends RendererProps,
+    Omit<DialogSchema, 'className'> {
   onClose: () => void;
   onConfirm: (
     values: Array<object>,
@@ -96,14 +98,11 @@ export interface DialogProps extends RendererProps, DialogSchema {
   store: IModalStore;
   show?: boolean;
   lazyRender?: boolean;
+  lazySchema?: (props: DialogProps) => SchemaCollection;
   wrapperComponent: React.ElementType;
 }
 
-export interface DialogState {
-  entered: boolean;
-}
-
-export default class Dialog extends React.Component<DialogProps, DialogState> {
+export default class Dialog extends React.Component<DialogProps> {
   static propsList: Array<string> = [
     'title',
     'size',
@@ -139,9 +138,7 @@ export default class Dialog extends React.Component<DialogProps, DialogState> {
   constructor(props: DialogProps) {
     super(props);
 
-    this.state = {
-      entered: !!this.props.show
-    };
+    props.store.setEntered(!!props.show);
     this.handleSelfClose = this.handleSelfClose.bind(this);
     this.handleAction = this.handleAction.bind(this);
     this.handleDialogConfirm = this.handleDialogConfirm.bind(this);
@@ -192,7 +189,7 @@ export default class Dialog extends React.Component<DialogProps, DialogState> {
     ret.push({
       type: 'button',
       actionType: 'cancel',
-      label: __('cancle')
+      label: __('cancel')
     });
 
     if (confirm) {
@@ -294,10 +291,12 @@ export default class Dialog extends React.Component<DialogProps, DialogState> {
   }
 
   handleEntered() {
-    this.state.entered ||
-      this.setState({
-        entered: true
-      });
+    const {lazySchema, store} = this.props;
+
+    store.setEntered(true);
+    if (typeof lazySchema === 'function') {
+      store.setSchema(lazySchema(this.props));
+    }
 
     const activeElem = document.activeElement as HTMLElement;
     if (activeElem) {
@@ -307,13 +306,14 @@ export default class Dialog extends React.Component<DialogProps, DialogState> {
   }
 
   handleExited() {
-    const {store} = this.props;
-    isAlive(store) && store.setFormData({});
-
-    this.state.entered &&
-      this.setState({
-        entered: false
-      });
+    const {lazySchema, store} = this.props;
+    if (isAlive(store)) {
+      store.setFormData({});
+      store.setEntered(false);
+      if (typeof lazySchema === 'function') {
+        store.setSchema('');
+      }
+    }
   }
 
   handleFormInit(data: any) {
@@ -431,12 +431,12 @@ export default class Dialog extends React.Component<DialogProps, DialogState> {
   }
 
   render() {
+    const store = this.props.store;
     const {
       className,
       size,
       closeOnEsc,
       title,
-      store,
       render,
       header,
       body,
@@ -444,15 +444,18 @@ export default class Dialog extends React.Component<DialogProps, DialogState> {
       headerClassName,
       show,
       lazyRender,
+      lazySchema,
       wrapperComponent,
       showCloseButton,
       env,
       classnames: cx,
       classPrefix,
       translate: __
-    } = this.props;
+    } = {
+      ...this.props,
+      ...store.schema
+    } as any;
 
-    // console.log('Render Dialog');
     const Wrapper = wrapperComponent || Modal;
 
     return (
@@ -520,7 +523,7 @@ export default class Dialog extends React.Component<DialogProps, DialogState> {
             })
           : null}
 
-        {!this.state.entered && lazyRender ? (
+        {(!store.entered && lazyRender) || (lazySchema && !body) ? (
           <div className={cx('Modal-body', bodyClassName)}>
             <Spinner overlay show size="lg" />
           </div>
@@ -780,7 +783,10 @@ export class DialogRenderer extends Dialog {
     } else if (onAction) {
       let ret = onAction(
         e,
-        action,
+        {
+          ...action,
+          close: false
+        },
         data,
         throwErrors,
         delegate || this.context

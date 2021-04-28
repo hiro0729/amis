@@ -31,6 +31,7 @@ import Formula from './Formula';
 
 export interface ExpressionProps extends ThemeProps {
   value: ExpressionComplex;
+  data?: any;
   index?: number;
   onChange: (value: ExpressionComplex, index?: number) => void;
   valueField?: FieldSimple;
@@ -39,6 +40,8 @@ export interface ExpressionProps extends ThemeProps {
   allowedTypes?: Array<'value' | 'field' | 'func' | 'formula'>;
   op?: OperatorType;
   config: Config;
+  disabled?: boolean;
+  fieldClassName?: string;
 }
 
 const fieldMap = {
@@ -124,7 +127,10 @@ export class Expression extends React.Component<ExpressionProps> {
       fields,
       op,
       classnames: cx,
-      config
+      fieldClassName,
+      config,
+      data,
+      disabled
     } = this.props;
     const inputType =
       ((value as any)?.type === 'field'
@@ -153,6 +159,8 @@ export class Expression extends React.Component<ExpressionProps> {
             value={value}
             onChange={this.handleValueChange}
             op={op}
+            data={data}
+            disabled={disabled}
           />
         ) : null}
 
@@ -160,6 +168,8 @@ export class Expression extends React.Component<ExpressionProps> {
           <ConditionField
             value={(value as any)?.field}
             onChange={this.handleFieldChange}
+            fieldClassName={fieldClassName}
+            disabled={disabled}
             options={
               valueField
                 ? filterTree(
@@ -178,9 +188,11 @@ export class Expression extends React.Component<ExpressionProps> {
             config={config}
             value={value as ExpressionFunc}
             onChange={this.handleFuncChange}
+            fieldClassName={fieldClassName}
             funcs={funcs}
             fields={fields}
             allowedTypes={allowedTypes}
+            disabled={disabled}
           />
         ) : null}
 
@@ -188,11 +200,13 @@ export class Expression extends React.Component<ExpressionProps> {
           <Formula
             value={(value as any)?.value}
             onChange={this.handleFormulaChange}
+            disabled={disabled}
           />
         ) : null}
 
         {types.length > 1 ? (
           <InputSwitch
+            disabled={disabled}
             value={inputType}
             onChange={this.handleInputTypeChange}
             options={types.map(item => ({

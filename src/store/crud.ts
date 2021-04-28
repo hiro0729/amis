@@ -37,6 +37,7 @@ export const CRUDStore = ServiceStore.named('CRUDStore')
     mode: 'normal',
     hasNext: false,
     selectedAction: types.frozen(),
+    columns: types.frozen(),
     items: types.optional(types.array(types.frozen()), []),
     selectedItems: types.optional(types.array(types.frozen()), []),
     unSelectedItems: types.optional(types.array(types.frozen()), []),
@@ -73,6 +74,21 @@ export const CRUDStore = ServiceStore.named('CRUDStore')
 
     get selectedItemsAsArray() {
       return self.selectedItems.concat();
+    },
+
+    fetchCtxOf(
+      data: any,
+      options: {
+        pageField?: string;
+        perPageField?: string;
+      }
+    ) {
+      return createObject(data, {
+        ...self.query,
+        [options.pageField || 'page']: self.page,
+        [options.perPageField || 'perPage']: self.perPage,
+        ...data
+      });
     }
   }))
   .actions(self => {
@@ -227,6 +243,7 @@ export const CRUDStore = ServiceStore.named('CRUDStore')
             hasNext,
             items: oItems,
             rows: oRows,
+            columns,
             ...rest
           } = result;
 
@@ -282,6 +299,12 @@ export const CRUDStore = ServiceStore.named('CRUDStore')
             data.count = data.total = rowsData.length;
           }
 
+          if (Array.isArray(columns)) {
+            self.columns = columns.concat();
+          } else {
+            self.columns = undefined;
+          }
+
           self.items.replace(rowsData);
           self.reInitData(data, !!(api as ApiObject).replaceData);
           options.syncResponse2Query !== false &&
@@ -292,7 +315,7 @@ export const CRUDStore = ServiceStore.named('CRUDStore')
               options.perPageField || 'perPage'
             );
 
-          self.total = parseInt(data.total || data.count, 10) || 0;
+          self.total = parseInt(data.total ?? data.count, 10) || 0;
           typeof page !== 'undefined' && (self.page = parseInt(page, 10));
 
           // 分页情况不清楚，只能知道有没有下一页。
@@ -331,9 +354,9 @@ export const CRUDStore = ServiceStore.named('CRUDStore')
       }
     });
 
-    function changePage(page: number, perPage?: number) {
+    function changePage(page: number, perPage?: number | string) {
       self.page = page;
-      perPage && (self.perPage = perPage);
+      perPage && (self.perPage = parseInt(perPage as string, 10));
     }
 
     function selectAction(action: Action) {

@@ -29,9 +29,16 @@ export interface ContainerSchema extends BaseSchema {
   style?: {
     [propName: string]: any;
   };
+
+  /**
+   * 使用的标签
+   */
+  wrapperComponent?: string;
 }
 
-export interface ContainerProps extends RendererProps, ContainerSchema {
+export interface ContainerProps
+  extends RendererProps,
+    Omit<ContainerSchema, 'type' | 'className'> {
   children?: (props: any) => React.ReactNode;
 }
 
@@ -61,12 +68,21 @@ export default class Container<T> extends React.Component<
   }
 
   render() {
-    const {className, size, classnames: cx, style} = this.props;
+    const {
+      className,
+      wrapperComponent,
+      size,
+      classnames: cx,
+      style
+    } = this.props;
+
+    const Component =
+      (wrapperComponent as keyof JSX.IntrinsicElements) || 'div';
 
     return (
-      <div className={cx('Container', className)} style={style}>
+      <Component className={cx('Container', className)} style={style}>
         {this.renderBody()}
-      </div>
+      </Component>
     );
   }
 }

@@ -149,7 +149,7 @@ export interface FormSchema extends BaseSchema {
   /**
    * 是否开启本地缓存
    */
-  persistData?: boolean;
+  persistData?: string;
 
   /**
    * 提交成功后清空本地缓存
@@ -287,6 +287,11 @@ export interface FormSchema extends BaseSchema {
     rule: string;
     message: string;
   }>;
+
+  /**
+   * 禁用回车提交
+   */
+  preventEnterSubmit?: boolean;
 }
 
 export type FormGroup = FormSchema & {
@@ -298,7 +303,9 @@ export interface FormGroupArray extends Array<FormGroupNode> {}
 
 export type FormHorizontal = FormSchemaHorizontal;
 
-export interface FormProps extends RendererProps, Omit<FormSchema, 'mode'> {
+export interface FormProps
+  extends RendererProps,
+    Omit<FormSchema, 'mode' | 'className'> {
   data: any;
   store: IFormStore;
   wrapperComponent: React.ElementType;
@@ -393,7 +400,7 @@ export default class Form extends React.Component<FormProps, object> {
   disposeOnValidate: () => void;
   disposeRulesValidate: () => void;
   shouldLoadInitApi: boolean = false;
-  timer: NodeJS.Timeout;
+  timer: ReturnType<typeof setTimeout>;
   mounted: boolean;
   lazyHandleChange = debouce(this.handleChange.bind(this), 250, {
     trailing: true,
@@ -429,7 +436,8 @@ export default class Form extends React.Component<FormProps, object> {
     const {store, canAccessSuperData, persistData, simpleMode} = this.props;
 
     store.setCanAccessSuperData(canAccessSuperData !== false);
-    persistData && store.getPersistData();
+    store.setPersistData(persistData);
+    persistData && store.getLocalPersistData();
 
     if (simpleMode) {
       store.setInited(true);
@@ -816,7 +824,13 @@ export default class Form extends React.Component<FormProps, object> {
   }
 
   handleFormSubmit(e: React.UIEvent<any>) {
+    const {preventEnterSubmit} = this.props;
+
     e.preventDefault();
+    if (preventEnterSubmit) {
+      return false;
+    }
+
     return this.handleAction(
       e,
       {
@@ -953,6 +967,8 @@ export default class Form extends React.Component<FormProps, object> {
                 // 如果 feedback 配置了，取消就跳过原有逻辑。
                 if (feedback.skipRestOnCancel && !confirmed) {
                   throw new SkipOperation();
+                } else if (feedback.skipRestOnConfirm && confirmed) {
+                  throw new SkipOperation();
                 }
               }
 
@@ -974,7 +990,7 @@ export default class Form extends React.Component<FormProps, object> {
 
           resetAfterSubmit && store.reset(onReset);
           clearAfterSubmit && store.clear(onReset);
-          clearPersistDataAfterSubmit && store.clearPersistData();
+          clearPersistDataAfterSubmit && store.clearLocalPersistData();
 
           if (action.redirect || redirect) {
             const finalRedirect = filter(
@@ -1580,6 +1596,11 @@ export class FormRenderer extends Form {
     throwErrors: boolean = false,
     delegate?: IScopedContext
   ) {
+    // 禁用了不要做任何动作。@先注释掉，会引起其他问题
+    // if (this.props.disabled) {
+    //   return;
+    // }
+
     if (action.target && action.actionType !== 'reload') {
       const scoped = this.context as IScopedContext;
 

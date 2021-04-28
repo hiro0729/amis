@@ -1,13 +1,11 @@
 import React from 'react';
 import {Fields, ConditionGroupValue, Funcs} from './types';
-import {ClassNamesFn, ThemeProps, themeable} from '../../theme';
+import {ThemeProps, themeable} from '../../theme';
 import Button from '../Button';
 import GroupOrItem from './GroupOrItem';
 import {autobind, guid} from '../../utils/helper';
 import {Config} from './config';
 import {Icon} from '../icons';
-import PopOverContainer from '../PopOverContainer';
-import ListRadios from '../ListRadios';
 
 export interface ConditionGroupProps extends ThemeProps {
   config: Config;
@@ -15,10 +13,13 @@ export interface ConditionGroupProps extends ThemeProps {
   fields: Fields;
   funcs?: Funcs;
   showNot?: boolean;
+  data?: any;
+  disabled?: boolean;
   onChange: (value: ConditionGroupValue) => void;
   removeable?: boolean;
   onRemove?: (e: React.MouseEvent) => void;
   onDragStart?: (e: React.MouseEvent) => void;
+  fieldClassName?: string;
 }
 
 export class ConditionGroup extends React.Component<ConditionGroupProps> {
@@ -112,14 +113,17 @@ export class ConditionGroup extends React.Component<ConditionGroupProps> {
   render() {
     const {
       classnames: cx,
+      fieldClassName,
       value,
+      data,
       fields,
       funcs,
       config,
       removeable,
       onRemove,
       onDragStart,
-      showNot
+      showNot,
+      disabled
     } = this.props;
 
     return (
@@ -133,6 +137,7 @@ export class ConditionGroup extends React.Component<ConditionGroupProps> {
                 size="xs"
                 active={value?.not}
                 level={value?.not ? 'info' : 'default'}
+                disabled={disabled}
               >
                 非
               </Button>
@@ -143,6 +148,7 @@ export class ConditionGroup extends React.Component<ConditionGroupProps> {
                 onClick={this.handleConjunctionClick}
                 active={value?.conjunction !== 'or'}
                 level={value?.conjunction !== 'or' ? 'info' : 'default'}
+                disabled={disabled}
               >
                 并且
               </Button>
@@ -151,6 +157,7 @@ export class ConditionGroup extends React.Component<ConditionGroupProps> {
                 onClick={this.handleConjunctionClick}
                 active={value?.conjunction === 'or'}
                 level={value?.conjunction === 'or' ? 'info' : 'default'}
+                disabled={disabled}
               >
                 或者
               </Button>
@@ -158,22 +165,25 @@ export class ConditionGroup extends React.Component<ConditionGroupProps> {
           </div>
           <div className={cx('CBGroup-toolbarConditionAdd')}>
             <div className={cx('ButtonGroup')}>
-              <Button onClick={this.handleAdd} size="xs">
+              <Button onClick={this.handleAdd} size="xs" disabled={disabled}>
                 <Icon icon="plus" className="icon" />
                 添加条件
               </Button>
-              <Button onClick={this.handleAddGroup} size="xs">
+              <Button
+                onClick={this.handleAddGroup}
+                size="xs"
+                disabled={disabled}
+              >
                 <Icon icon="plus-cicle" className="icon" />
                 添加条件组
               </Button>
             </div>
-
-            {removeable ? (
-              <a className={cx('CBDelete')} onClick={onRemove}>
-                <Icon icon="close" className="icon" />
-              </a>
-            ) : null}
           </div>
+          {removeable ? (
+            <a className={cx('CBDelete')} onClick={onRemove}>
+              <Icon icon="close" className="icon" />
+            </a>
+          ) : null}
         </div>
 
         <div className={cx('CBGroup-body')}>
@@ -185,11 +195,14 @@ export class ConditionGroup extends React.Component<ConditionGroupProps> {
                 config={config}
                 key={item.id}
                 fields={fields}
+                fieldClassName={fieldClassName}
                 value={item as ConditionGroupValue}
                 index={index}
                 onChange={this.handleItemChange}
                 funcs={funcs}
                 onRemove={this.handleItemRemove}
+                data={data}
+                disabled={disabled}
               />
             ))
           ) : (

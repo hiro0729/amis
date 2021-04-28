@@ -353,6 +353,27 @@ order: 12
 }
 ```
 
+### namespace
+
+> since 1.1.6
+
+默认取值都是从当前组件上下文数据链中取数据，但是有些数据可能不在这个数据链中，比如有些数据存在全局变量，有的数据存在 localstorage 中。
+
+从 1.1.6 版本开始，支持了一种新的语法如：`${window:document.title}` 意思是从全局变量中取页面的标题。
+
+目前有以下三种 namespace
+
+- `window` 即全局变量
+- `ls` 即 localStorage， 如果值是 json 对象，可以直接当对象用比如：`${ls:xxxxxlocalStrorageKey.xxxx}`
+- `ss` 即 sessionStorage，同上。
+
+```schema
+{
+  "type": "page",
+  "body": "当前页面标题为：<span class='label label-info'>${window:document[title]}</span>"
+}
+```
+
 ## 过滤器
 
 过滤器是对数据映射的一种增强，它的作用是对获取数据做一些处理，基本用法如下：
@@ -578,7 +599,7 @@ ${_|now}
 将 xxx 修改成 7 天前，假如值是 10 月 8 号，那么处理完后就是 10 月 1 号。
 
 ```
-${xxx | dateModify:substract:-7:day}
+${xxx | dateModify:subtract:-7:day}
 ```
 
 来个高级点的，比如我想返回个上个月开头的第一天。
@@ -586,7 +607,7 @@ ${xxx | dateModify:substract:-7:day}
 ```schema
 {
   "type": "page",
-  "body": "上个月第一天是：${_|now|dateModify:substract:1:month|dateModify:startOf:month|date:YYYY-MM-DD HH\\:mm\\:ss}"
+  "body": "上个月第一天是：${_|now|dateModify:subtract:1:month|dateModify:startOf:month|date:YYYY-MM-DD HH\\:mm\\:ss}"
 }
 ```
 
@@ -1032,6 +1053,51 @@ ${xxx | pick[:path]}
 ```
 
 可以用变量 index 来获取下标。
+
+### objectToArray
+
+对象转换为数组
+
+- key: 对象的键转换之后的字段名，默认是'label'
+- value: 对象的值转换之后的字段名，默认是'value'
+
+```
+${xxx | objectToArray[:key][:value]}
+```
+
+```schema
+{
+  "type": "page",
+  "data": {
+    "row": {
+      "a": "A",
+      "b": "B",
+      "c": "C"
+    }
+  },
+  "body": {
+    "type": "tpl",
+    "tpl": "row is: ${row|objectToArray|json}"
+  }
+}
+```
+
+```schema
+{
+  "type": "page",
+  "data": {
+    "row": {
+      "a": "A",
+      "b": "B",
+      "c": "C"
+    }
+  },
+  "body": {
+    "type": "tpl",
+    "tpl": "row is: ${row|objectToArray:key:val|json}"
+  }
+}
+```
 
 ### plus
 

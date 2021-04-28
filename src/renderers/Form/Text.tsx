@@ -5,7 +5,6 @@ import {
   highlight,
   FormOptionsControl
 } from './Options';
-import cx from 'classnames';
 import {Action} from '../../types';
 import Downshift, {StateChangeOptions} from 'downshift';
 // @ts-ignore
@@ -30,7 +29,14 @@ import {generateIcon} from '../../utils/icon';
  * 文档：https://baidu.gitee.io/amis/docs/components/form/text
  */
 export interface TextControlSchema extends FormOptionsControl {
-  type: 'text' | 'email' | 'url' | 'password';
+  type:
+    | 'text'
+    | 'email'
+    | 'url'
+    | 'password'
+    | 'native-date'
+    | 'native-time'
+    | 'native-number';
 
   addOn?: {
     position?: 'left' | 'right';
@@ -111,7 +117,8 @@ export default class TextControl extends React.PureComponent<
     labelField: 'label',
     valueField: 'value',
     placeholder: '',
-    allowInputText: true
+    allowInputText: true,
+    trimContents: true
   };
 
   componentWillReceiveProps(nextProps: TextProps) {
@@ -631,14 +638,18 @@ export default class TextControl extends React.PureComponent<
       className,
       inputOnly,
       value,
-      type,
       placeholder,
       onChange,
       disabled,
       readOnly,
+      max,
+      min,
+      step,
       clearable,
       name
     } = this.props;
+
+    const type = this.props.type?.replace('native-', '');
 
     return (
       <div className={cx('TextControl-input', inputOnly ? className : '')}>
@@ -651,8 +662,11 @@ export default class TextControl extends React.PureComponent<
           type={type}
           onFocus={this.handleFocus}
           onBlur={this.handleBlur}
+          max={max}
+          min={min}
           autoComplete="off"
           size={10}
+          step={step}
           onChange={this.handleNormalInputChange}
           value={
             typeof value === 'undefined' || value === null
@@ -771,3 +785,18 @@ export class EmailControlRenderer extends TextControl {}
   validations: 'isUrl'
 })
 export class UrlControlRenderer extends TextControl {}
+
+@OptionsControl({
+  type: 'native-date'
+})
+export class NativeDateControlRenderer extends TextControl {}
+
+@OptionsControl({
+  type: 'native-time'
+})
+export class NativeTimeControlRenderer extends TextControl {}
+
+@OptionsControl({
+  type: 'native-number'
+})
+export class NativeNumberControlRenderer extends TextControl {}

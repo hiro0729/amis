@@ -33,7 +33,7 @@ $colors: (
   secondary: #6c757d,
   success: #28a745,
   info: #17a2b8,
-  warning: #28a745,
+  warning: #fad733,
   danger: #dc3545,
   light: #f8f9fa,
   dark: #343a40,
@@ -414,4 +414,4 @@ $Form--horizontal-columns: 12;
 $Table-strip-bg: lighten(#f6f8f8, 1%) !default;
 $Toast-icon-fillHeight: true !default;
 $Number-handler-mode: 'vertical';
-$Wizard-steps-liAfterBorder: px2rem(20px) solid transparent !default;
+$Wizard-steps-liAfterBorder: px2rem(18px) solid transparent !default;

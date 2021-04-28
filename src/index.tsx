@@ -14,6 +14,7 @@ import {
   unRegisterRenderer,
   resolveRenderer,
   filterSchema,
+  addSchemaFilter,
   clearStoresCache,
   updateEnv
 } from './factory';
@@ -48,9 +49,11 @@ export * from './Schema';
 import './renderers/Action';
 import './renderers/Alert';
 import './renderers/App';
+import './renderers/Avatar';
 import './renderers/Remark';
 import './renderers/ButtonGroup';
 import './renderers/ButtonToolbar';
+import './renderers/Breadcrumb';
 import './renderers/DropDownButton';
 import './renderers/Collapse';
 import './renderers/Color';
@@ -63,6 +66,7 @@ import './renderers/Date';
 import './renderers/Dialog';
 import './renderers/Divider';
 import './renderers/Each';
+import './renderers/Flex';
 import './renderers/Form/index';
 import './renderers/Form/Control';
 import './renderers/Form/Hidden';
@@ -133,6 +137,7 @@ import './renderers/Page';
 import './renderers/PaginationWrapper';
 import './renderers/Panel';
 import './renderers/Plain';
+import './renderers/Property';
 import './renderers/Spinner';
 import './renderers/Table/index';
 import './renderers/Tabs';
@@ -159,12 +164,19 @@ import './renderers/IFrame';
 import './renderers/QRCode';
 import './renderers/Icon';
 import './renderers/Carousel';
+import './renderers/AnchorNav';
+import './renderers/Form/AnchorNav';
+import './renderers/Steps';
+import './renderers/Markdown';
+
 import Scoped, {ScopedContext} from './Scoped';
 
 import {FormItem, registerFormItem} from './renderers/Form/Item';
 
 // 兼容旧版本用法
 import './compat';
+
+import './envOverwrite';
 
 import './themes/default';
 import './themes/cxd';

@@ -12,7 +12,6 @@ import Button from './Button';
 import Checkbox from './Checkbox';
 import Checkboxes from './Checkboxes';
 import Collapse from './Collapse';
-import ColorPicker from './ColorPicker';
 import DatePicker from './DatePicker';
 import DateRangePicker from './DateRangePicker';
 import Drawer from './Drawer';
@@ -54,6 +53,7 @@ import ListGroup from './ListGroup';
 import NumberInput from './NumberInput';
 import ArrayInput from './ArrayInput';
 import SearchBox from './SearchBox';
+import AnchorNav from './AnchorNav';
 
 export {
   NotFound,
@@ -69,7 +69,6 @@ export {
   Checkbox,
   Checkboxes,
   Collapse,
-  ColorPicker,
   DatePicker,
   DateRangePicker,
   Drawer,
@@ -111,5 +110,6 @@ export {
   TreeRadios,
   ListGroup,
   NumberInput,
-  ArrayInput
+  ArrayInput,
+  AnchorNav
 };

@@ -168,6 +168,14 @@
   float: none;
 }
 
+.pull-right {
+  float: right;
+}
+
+.pull-left {
+  float: left;
+}
+
 .rounded {
   border-radius: 500px;
 }
@@ -1518,6 +1526,10 @@
   white-space: normal;
   word-break: break-all;
   word-wrap: break-word;
+}
+
+.white-space-pre {
+  white-space: pre;
 }
 
 //

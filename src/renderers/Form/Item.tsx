@@ -80,6 +80,7 @@ import {TplSchema} from '../Tpl';
 import {DividerSchema} from '../Divider';
 import {HocStoreFactory} from '../../WithStore';
 import {MonthRangeControlSchema} from './MonthRange';
+import {AnchorNavControlSchema} from './AnchorNav';
 
 export type FormControlType =
   | 'array'
@@ -195,7 +196,13 @@ export type FormControlType =
   | 'divider'
   | 'html'
   | 'plain'
-  | 'tpl';
+  | 'tpl'
+  | 'anchor-nav'
+
+  // 原生 input 类型
+  | 'native-date'
+  | 'native-time'
+  | 'native-number';
 
 export type FormControlSchema =
   | ArrayControlSchema
@@ -258,6 +265,7 @@ export type FormControlSchema =
   | TransferControlSchema
   | TreeControlSchema
   | TreeSelectControlSchema
+  | AnchorNavControlSchema
 
   // 非表单项，但是也可以放进来。
   | DividerSchema;
@@ -776,7 +784,7 @@ export class FormItemWrap extends React.Component<FormItemProps> {
             )}
           >
             <span>
-              {render('label', filter(label, data))}
+              {label ? render('label', filter(label, data)) : null}
               {required && (label || labelRemark) ? (
                 <span className={cx(`Form-star`)}>*</span>
               ) : null}
@@ -888,7 +896,7 @@ export class FormItemWrap extends React.Component<FormItemProps> {
         {label && renderLabel !== false ? (
           <label className={cx(`Form-label`, labelClassName)}>
             <span>
-              {render('label', filter(label, data))}
+              {label ? render('label', filter(label, data)) : null}
               {required && (label || labelRemark) ? (
                 <span className={cx(`Form-star`)}>*</span>
               ) : null}
@@ -990,7 +998,7 @@ export class FormItemWrap extends React.Component<FormItemProps> {
         {label && renderLabel !== false ? (
           <label className={cx(`Form-label`, labelClassName)}>
             <span>
-              {render('label', filter(label, data))}
+              {label ? render('label', filter(label, data)) : label}
               {required && (label || labelRemark) ? (
                 <span className={cx(`Form-star`)}>*</span>
               ) : null}

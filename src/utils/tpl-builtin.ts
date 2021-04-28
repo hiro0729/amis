@@ -13,6 +13,7 @@ import {
 import {Enginer} from './tpl';
 import uniqBy from 'lodash/uniqBy';
 import uniq from 'lodash/uniq';
+import transform from 'lodash/transform';
 
 const UNITS = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
 
@@ -271,8 +272,8 @@ export const filters: {
   },
   url_encode: input => encodeURIComponent(input),
   url_decode: input => decodeURIComponent(input),
-  default: (input, defaultValue) =>
-    input ||
+  default: (input, defaultValue, strict = false) =>
+    (strict ? input : input ? input : undefined) ??
     (() => {
       try {
         if (defaultValue === 'undefined') {
@@ -294,6 +295,21 @@ export const filters: {
     order?: 'asc' | 'desc'
   ) =>
     Array.isArray(input) ? input.sort(makeSorter(key, method, order)) : input,
+  objectToArray: (
+    input: any,
+    label: string = 'label',
+    value: string = 'value'
+  ) =>
+    transform(
+      input,
+      (result: any, v, k) => {
+        (result || (result = [])).push({
+          [label]: v,
+          [value]: k
+        });
+      },
+      []
+    ),
   unique: (input: any, key?: string) =>
     Array.isArray(input) ? (key ? uniqBy(input, key) : uniq(input)) : input,
   topAndOther: (
@@ -423,7 +439,7 @@ export const filters: {
         return input;
       }
 
-      let reg = string2regExp(arg1, false);
+      let reg = string2regExp(`${arg1}`, false);
       fn = value => reg.test(String(value));
     }
 
@@ -469,7 +485,7 @@ export const filters: {
     matchArg = getStrOrVariable(matchArg, this as any);
     return getConditionValue(
       input,
-      matchArg && string2regExp(matchArg, false).test(String(input)),
+      matchArg && string2regExp(`${matchArg}`, false).test(String(input)),
       trueValue,
       falseValue,
       this
@@ -479,7 +495,7 @@ export const filters: {
     matchArg = getStrOrVariable(matchArg, this as any);
     return getConditionValue(
       input,
-      matchArg && !string2regExp(matchArg, false).test(String(input)),
+      matchArg && !string2regExp(`${matchArg}`, false).test(String(input)),
       trueValue,
       falseValue,
       this
@@ -601,19 +617,7 @@ export function pickValues(names: string, data: object) {
   return ret;
 }
 
-export const resolveVariable = (path?: string, data: any = {}): any => {
-  if (!path || !data) {
-    return undefined;
-  }
-
-  if (path === '$$') {
-    return data;
-  } else if (path[0] === '$') {
-    path = path.substring(1);
-  } else if (path === '&') {
-    return data;
-  }
-
+function objectGet(data: any, path: string) {
   if (typeof data[path] !== 'undefined') {
     return data[path];
   }
@@ -626,23 +630,78 @@ export const resolveVariable = (path?: string, data: any = {}): any => {
 
     return undefined;
   }, data);
+}
+
+function parseJson(str: string, defaultValue?: any) {
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    return defaultValue;
+  }
+}
+
+export const resolveVariable = (path?: string, data: any = {}): any => {
+  if (!path || !data || typeof path !== 'string') {
+    return undefined;
+  }
+
+  let [ns, varname] = path.split(':');
+
+  if (!varname && ns) {
+    varname = ns;
+    ns = '';
+  }
+
+  if (ns === 'window') {
+    data = window;
+  } else if (ns === 'ls' || ns === 'ss') {
+    let parts = keyToPath(varname.replace(/^{|}$/g, ''));
+    const key = parts.shift()!;
+    const raw =
+      ns === 'ss' ? sessionStorage.getItem(key) : localStorage.getItem(key);
+
+    if (typeof raw === 'string') {
+      const data = parseJson(raw, raw);
+
+      if (isObject(data) && parts.length) {
+        return objectGet(data, parts.join('.'));
+      }
+
+      return data;
+    }
+
+    return undefined;
+  }
+
+  if (varname === '$$') {
+    return data;
+  } else if (varname[0] === '$') {
+    varname = path.substring(1);
+  } else if (varname === '&') {
+    return data;
+  }
+
+  return objectGet(data, varname);
 };
 
-export const isPureVariable = (path?: any) =>
-  typeof path === 'string'
-    ? /^\$(?:([a-z0-9_.]+)|{[^}{]+})$/.test(path)
+export function isPureVariable(path?: any): path is string {
+  return typeof path === 'string'
+    ? /^\$(?:((?:\w+\:)?[a-z0-9_.][a-z0-9_.\[\]]*)|{[^}{]+})$/i.test(path)
     : false;
-
+}
 export const resolveVariableAndFilter = (
   path?: string,
   data: object = {},
-  defaultFilter: string = '| html'
+  defaultFilter: string = '| html',
+  fallbackValue = (value: any) => value
 ): any => {
   if (!path) {
     return undefined;
   }
 
-  const m = /^(\\)?\$(?:([a-z0-9_.]+)|{([\s\S]+)})$/i.exec(path);
+  const m = /^(\\)?\$(?:((?:\w+\:)?[a-z0-9_.][a-z0-9_.\[\]]*)|{([\s\S]+)})$/i.exec(
+    path
+  );
 
   if (!m) {
     return undefined;
@@ -659,7 +718,7 @@ export const resolveVariableAndFilter = (
 
   // 先只支持一层吧
   finalKey = finalKey.replace(
-    /(\\|\\\$)?\$(?:([a-zA-Z0-9_.]+)|{([^}{]+)})/g,
+    /(\\|\\\$)?\$(?:([a-zA-Z0-9_.][a-zA-Z0-9_.\[\]]*)|{([^}{]+)})/g,
     (_, escape) => {
       return escape
         ? _.substring(1)
@@ -683,7 +742,7 @@ export const resolveVariableAndFilter = (
   return ret == null &&
     !~originalKey.indexOf('default') &&
     !~originalKey.indexOf('now')
-    ? ret
+    ? fallbackValue(ret)
     : paths.reduce((input, filter) => {
         let params = filter
           .replace(
@@ -735,7 +794,7 @@ export const tokenize = (
   }
 
   return str.replace(
-    /(\\)?\$(?:([a-z0-9_\.]+|&|\$)|{([^}{]+?)})/gi,
+    /(\\)?\$(?:((?:\w+\:)?[a-z0-9_\.][a-z0-9_\.\[\]]*|&|\$)|{([^}{]+?)})/gi,
     (_, escape, key1, key2, index, source) => {
       if (!escape && key1 === '$') {
         const prefix = source[index - 1];
@@ -757,7 +816,7 @@ function resolveMapping(
   defaultFilter = '| raw'
 ) {
   return typeof value === 'string' && isPureVariable(value)
-    ? resolveVariableAndFilter(value, data, defaultFilter)
+    ? resolveVariableAndFilter(value, data, defaultFilter, () => '')
     : typeof value === 'string' && ~value.indexOf('$')
     ? tokenize(value, data, defaultFilter)
     : value;
@@ -768,14 +827,15 @@ export function dataMapping(
   from: PlainObject,
   ignoreFunction: boolean | ((key: string, value: any) => boolean) = false
 ): any {
-  let ret = {};
-
   if (Array.isArray(to)) {
     return to.map(item => dataMapping(item, from, ignoreFunction));
-  } else if (!to) {
-    return ret;
+  } else if (typeof to === 'string') {
+    return resolveMapping(to, from);
+  } else if (!isPlainObject(to)) {
+    return to;
   }
 
+  let ret = {};
   Object.keys(to).forEach(key => {
     const value = to[key];
     let keys: Array<string>;

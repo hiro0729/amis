@@ -5,7 +5,7 @@ import Overlay from '../components/Overlay';
 import PopOver from '../components/PopOver';
 import TooltipWrapper from '../components/TooltipWrapper';
 import type {TooltipObject, Trigger} from '../components/TooltipWrapper';
-import {isVisible, noop} from '../utils/helper';
+import {isDisabled, isVisible, noop} from '../utils/helper';
 import {filter} from '../utils/tpl';
 import {Icon} from '../components/icons';
 import {BaseSchema, SchemaClassName} from '../Schema';
@@ -80,7 +80,7 @@ export interface DropdownButtonSchema extends BaseSchema {
 
 export interface DropDownButtonProps
   extends RendererProps,
-    Omit<DropdownButtonSchema, 'type'> {
+    Omit<DropdownButtonSchema, 'type' | 'className'> {
   disabledTip?: string | TooltipObject;
   /**
    * 按钮提示文字，hover focus 时显示
@@ -191,7 +191,10 @@ export default class DropDownButton extends React.Component<
                 }
 
                 return (
-                  <li key={index}>
+                  <li
+                    key={index}
+                    className={isDisabled(button, data) ? 'is-disabled' : ''}
+                  >
                     {render(`button/${index}`, {
                       type: 'button',
                       ...(button as any),
@@ -235,6 +238,7 @@ export default class DropDownButton extends React.Component<
       block,
       disabled,
       btnDisabled,
+      btnClassName,
       size,
       label,
       level,
@@ -249,11 +253,15 @@ export default class DropDownButton extends React.Component<
 
     return (
       <div
-        className={cx('DropDown ', {
-          'DropDown--block': block,
-          'DropDown--alignRight': align === 'right',
-          'is-opened': this.state.isOpened
-        })}
+        className={cx(
+          'DropDown ',
+          {
+            'DropDown--block': block,
+            'DropDown--alignRight': align === 'right',
+            'is-opened': this.state.isOpened
+          },
+          className
+        )}
         ref={this.domRef}
       >
         <TooltipWrapper
@@ -268,7 +276,7 @@ export default class DropDownButton extends React.Component<
             disabled={disabled || btnDisabled}
             className={cx(
               'Button',
-              className,
+              btnClassName,
               typeof level === 'undefined'
                 ? 'Button--default'
                 : level
